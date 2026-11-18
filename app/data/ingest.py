@@ -1,158 +1,192 @@
-"""Ingestion pipeline: PDF/CSV parsing -> Model Armor -> Cloud DLP -> VectorStore/BigQuery."""
+"""Gate 1 (Cyber Firewall) + Client Passport Normalization -> Canonical JSON."""
 
 from __future__ import annotations
 
 import csv
 import io
+import re
 from pathlib import Path
 from typing import Any
 
 from pypdf import PdfReader
 
-from app.config import settings
+from app.agents.models import CanonicalInvoice, LedgerEntry, SecurityMeta
 from app.data.audit_logger import audit_logger
-from app.data.vector_store import vector_store
+from app.data.passports import get_passport
 from app.security.dlp_tokenizer import dlp_tokenizer
 from app.security.model_armor import scan_chunk
 
 
-def ingest_pdf_bytes(deal_id: str, filename: str, data: bytes) -> dict[str, Any]:
-    """Extract PDF pages, screen with Model Armor, mask with Cloud DLP, and index."""
-    if settings.use_real_gcp_data and settings.gcs_quarantine_bucket:
-        try:
-            from google.cloud import storage
+class QuarantineError(Exception):
+    """Raised when Gate 1 blocks a document (tenant mismatch or Model Armor)."""
 
-            client = storage.Client(project=settings.gcp_project_id)
-            bucket = client.bucket(settings.gcs_quarantine_bucket)
-            bucket.blob(f"{deal_id}/{filename}").upload_from_string(data, content_type="application/pdf")
-        except Exception:
-            pass
-
-    reader = PdfReader(io.BytesIO(data))
-    indexed_chunks = 0
-    blocked_chunks = 0
-    masked_entities = 0
-    tampering_alerts: list[dict[str, Any]] = []
-
-    for page_idx, page in enumerate(reader.pages, start=1):
-        raw_text = page.extract_text() or ""
-        # Split by lines/paragraphs so Model Armor quarantines ONLY the poisoned segment
-        lines = [ln.strip() for ln in raw_text.splitlines() if ln.strip()]
-        clean_lines: list[str] = []
-
-        for line in lines:
-            armor = scan_chunk(line)
-            if not armor.is_safe:
-                blocked_chunks += 1
-                alert = {
-                    "doc_name": filename,
-                    "page_num": page_idx,
-                    "matched_rule": armor.matched_rule,
-                    "provider": armor.provider,
-                    "snippet_preview": line[:120],
-                }
-                tampering_alerts.append(alert)
-                audit_logger.log(
-                    deal_id=deal_id,
-                    agent_name="ingestor",
-                    event_type="MODEL_ARMOR_BLOCK",
-                    severity="CRITICAL",
-                    details=alert,
-                )
-            else:
-                clean_lines.append(line)
-
-        if clean_lines:
-            page_clean_text = "\n".join(clean_lines)
-            dlp_res = dlp_tokenizer.deidentify(page_clean_text)
-            masked_entities += dlp_res.entities_masked
-            if dlp_res.entities_masked > 0:
-                audit_logger.log(
-                    deal_id=deal_id,
-                    agent_name="ingestor",
-                    event_type="DLP_MASKED",
-                    severity="INFO",
-                    details={
-                        "doc_name": filename,
-                        "page_num": page_idx,
-                        "entities_masked": dlp_res.entities_masked,
-                        "tokens": dlp_res.tokens_used,
-                        "provider": dlp_res.provider,
-                    },
-                )
-            vector_store.add_chunk(
-                deal_id=deal_id,
-                doc_name=filename,
-                page_num=page_idx,
-                chunk_idx=1,
-                text=dlp_res.sanitized_text,
-            )
-            indexed_chunks += 1
-
-    return {
-        "filename": filename,
-        "type": "pdf",
-        "pages": len(reader.pages),
-        "indexed_chunks": indexed_chunks,
-        "blocked_chunks": blocked_chunks,
-        "masked_entities": masked_entities,
-        "tampering_alerts": tampering_alerts,
-    }
+    def __init__(self, reason: str, event_type: str, details: dict[str, Any]) -> None:
+        super().__init__(reason)
+        self.reason = reason
+        self.event_type = event_type
+        self.details = details
 
 
-def ingest_csv_bytes(deal_id: str, filename: str, data: bytes) -> dict[str, Any]:
-    """Load structured financial CSV into BigQuery (if enabled) and local ledger store."""
-    text = data.decode("utf-8")
-    reader = csv.DictReader(io.StringIO(text))
-    rows: list[dict[str, Any]] = []
-    for row in reader:
-        # Deterministically tokenize IBANs in ledger rows without 200 sequential DLP RPCs
-        iban_raw = row.get("bank_token", "")
-        if iban_raw and not iban_raw.startswith("[IBAN_"):
-            iban_tok = dlp_tokenizer.tokenize_iban(iban_raw)
-        else:
-            iban_tok = iban_raw
-        rows.append(
-            {
-                "deal_id": deal_id,
-                "invoice_id": row["invoice_id"],
-                "counterparty": row["counterparty"],
-                "direction": row["direction"],
-                "amount_eur": float(row["amount_eur"]),
-                "invoice_date": row["invoice_date"],
-                "bank_token": iban_tok,
-            }
+def _check_tenant(expected_tenant: str, doc_tenant: str, filename: str) -> None:
+    if doc_tenant and doc_tenant != expected_tenant:
+        details = {
+            "expected_tenant": expected_tenant,
+            "found_tenant": doc_tenant,
+            "source_file": filename,
+        }
+        audit_logger.log(
+            deal_id=expected_tenant,
+            agent_name="gate1_cyber",
+            event_type="TENANT_ISOLATION_BLOCK",
+            severity="CRITICAL",
+            details=details,
+        )
+        raise QuarantineError(
+            f"Tenant isolation violation: {filename} belongs to {doc_tenant}, not {expected_tenant}.",
+            "TENANT_ISOLATION_BLOCK",
+            details,
         )
 
-    vector_store.set_ledger(deal_id, rows)
 
-    if settings.use_real_gcp_data:
-        try:
-            from google.cloud import bigquery
+def ingest_csv_to_canonical(expected_tenant: str, filename: str, data: bytes) -> list[CanonicalInvoice]:
+    """Gate 1 + Passport mapping for ERP CSV exports."""
+    passport = get_passport(expected_tenant)
+    text = data.decode("utf-8")
+    reader = csv.DictReader(io.StringIO(text))
+    invoices: list[CanonicalInvoice] = []
 
-            bq = bigquery.Client(project=settings.gcp_project_id)
-            table_id = f"{settings.gcp_project_id}.{settings.bq_dataset}.{settings.bq_ledger_table}"
-            job_cfg = bigquery.LoadJobConfig(
-                write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
-                autodetect=True,
+    for row in reader:
+        doc_tenant = row.get("tenant_id", expected_tenant).strip()
+        _check_tenant(expected_tenant, doc_tenant, filename)
+
+        # Gate 1 Model Armor check on description
+        desc = row.get("Description", "")
+        armor = scan_chunk(desc)
+        if not armor.is_safe:
+            details = {"source_file": filename, "rule": armor.matched_rule, "provider": armor.provider}
+            audit_logger.log(expected_tenant, "gate1_cyber", "MODEL_ARMOR_BLOCK", "CRITICAL", details)
+            raise QuarantineError("Model Armor blocked malicious CSV payload.", "MODEL_ARMOR_BLOCK", details)
+
+        # Gate 1 DLP pseudonymization on supplier/customer
+        sup_res = dlp_tokenizer.deidentify(row.get("Fournisseur", "Fournisseur"))
+        cust_res = dlp_tokenizer.deidentify(row.get("Client", "Client"))
+        masked = sup_res.entities_masked + cust_res.entities_masked
+
+        audit_logger.log(
+            expected_tenant,
+            "gate1_cyber",
+            "GATE1_PASS",
+            "INFO",
+            {"source_file": filename, "tenant_verified": True, "pii_masked": masked, "norme": passport.norme},
+        )
+
+        ht = float(row.get("Montant_HT", 0))
+        vat = float(row.get("Taux_TVA", 0))
+        invoices.append(
+            CanonicalInvoice(
+                tenant_id=expected_tenant,
+                invoice_id=row.get("Num_Fact", "F-UNKNOWN"),
+                supplier=sup_res.sanitized_text,
+                customer=cust_res.sanitized_text,
+                is_intercompany=row.get("Intercompagnie", "false").lower() == "true",
+                amount_ht=ht,
+                vat_rate=vat,
+                amount_ttc=ht * (1.0 + vat),
+                invoice_date=row.get("Date_Fact", "2026-12-01"),
+                service_date=row.get("Date_Prest", "2026-12-01"),
+                ledger_entry=LedgerEntry(
+                    account=row.get("Compte", "622600"),
+                    amount=float(row.get("Montant_Ecriture", ht)),
+                    period=row.get("Periode", "2026-12"),
+                ),
+                description=desc,
+                source_file=filename,
+                security=SecurityMeta(model_armor="clean", pii_masked=masked, tenant_verified=True),
             )
-            bq.load_table_from_json(rows, table_id, job_config=job_cfg).result()
-        except Exception:
-            pass
+        )
+    return invoices
 
+
+def ingest_pdf_to_canonical(expected_tenant: str, filename: str, data: bytes) -> list[CanonicalInvoice]:
+    """Gate 1 (tenant_id + Model Armor + DLP) + PDF normalization into Canonical JSON."""
+    passport = get_passport(expected_tenant)
+    reader = PdfReader(io.BytesIO(data))
+    full_raw = "\n".join((p.extract_text() or "") for p in reader.pages)
+
+    # 1. Tenant check
+    t_match = re.search(r"TENANT_ID:\s*([A-Z0-9_]+)", full_raw)
+    if t_match:
+        _check_tenant(expected_tenant, t_match.group(1).strip(), filename)
+
+    # 2. Model Armor line-by-line check
+    for line in full_raw.splitlines():
+        armor = scan_chunk(line)
+        if not armor.is_safe:
+            details = {
+                "source_file": filename,
+                "matched_rule": armor.matched_rule,
+                "provider": armor.provider,
+                "snippet": line[:120],
+            }
+            audit_logger.log(expected_tenant, "gate1_cyber", "MODEL_ARMOR_BLOCK", "CRITICAL", details)
+            raise QuarantineError(
+                f"Model Armor quarantined {filename}: prompt injection detected ({armor.matched_rule}).",
+                "MODEL_ARMOR_BLOCK",
+                details,
+            )
+
+    # 3. DLP pseudonymization
+    dlp_res = dlp_tokenizer.deidentify(full_raw)
+    clean = dlp_res.sanitized_text
     audit_logger.log(
-        deal_id=deal_id,
-        agent_name="ingestor",
-        event_type="LEDGER_LOADED",
-        severity="INFO",
-        details={"filename": filename, "rows_loaded": len(rows)},
+        expected_tenant,
+        "gate1_cyber",
+        "DLP_MASKED",
+        "INFO",
+        {"source_file": filename, "pii_masked": dlp_res.entities_masked, "tokens": dlp_res.tokens_used, "norme": passport.norme},
     )
-    return {"filename": filename, "type": "csv", "rows_loaded": len(rows)}
+
+    def _find(pattern: str, default: str = "") -> str:
+        m = re.search(pattern, clean, re.IGNORECASE)
+        return m.group(1).strip() if m else default
+
+    inv_id = _find(r"FACTURE\s*N°?:\s*([A-Z0-9-]+)", "F-2026-PDF")
+    supplier = _find(r"Emetteur:\s*([^\n]+)", "[ENTITE_1]")
+    customer = _find(r"Destinataire:\s*([^\n]+)", "[ENTITE_2]")
+    interco = _find(r"Intercompagnie:\s*(OUI|NON|true|false)", "NON").upper() in ("OUI", "TRUE")
+    ht = float(_find(r"Montant\s*HT:\s*([\d.]+)", "0"))
+    vat_pct = float(_find(r"TVA:\s*([\d.]+)%", "20")) / 100.0
+    ttc = float(_find(r"Montant\s*TTC:\s*([\d.]+)", str(ht * (1 + vat_pct))))
+    inv_date = _find(r"Date\s*Facture:\s*(\d{4}-\d{2}-\d{2})", "2026-12-28")
+    srv_date = _find(r"Date\s*Prestation:\s*(\d{4}-\d{2}-\d{2})", inv_date)
+    account = _find(r"Compte\s*Grand\s*Livre:\s*(\d+)", "622600")
+    ledger_amt = float(_find(r"Montant\s*Ecriture:\s*([\d.]+)", str(ht)))
+    period = _find(r"Periode:\s*(\d{4}-\d{2})", inv_date[:7])
+    desc = _find(r"Description:\s*([^\n]+)", "Prestation de conseil")
+
+    return [
+        CanonicalInvoice(
+            tenant_id=expected_tenant,
+            invoice_id=inv_id,
+            supplier=supplier,
+            customer=customer,
+            is_intercompany=interco,
+            amount_ht=ht,
+            vat_rate=vat_pct,
+            amount_ttc=ttc,
+            invoice_date=inv_date,
+            service_date=srv_date,
+            ledger_entry=LedgerEntry(account=account, amount=ledger_amt, period=period),
+            description=desc,
+            source_file=filename,
+            security=SecurityMeta(model_armor="clean", pii_masked=dlp_res.entities_masked, tenant_verified=True),
+        )
+    ]
 
 
-def ingest_path(deal_id: str, path: Path) -> dict[str, Any]:
-    """Ingest a local PDF or CSV file."""
+def ingest_file(expected_tenant: str, path: Path) -> list[CanonicalInvoice]:
+    """Ingest a local CSV or PDF file through Gate 1 + Canonical Normalization."""
     data = path.read_bytes()
     if path.suffix.lower() == ".csv":
-        return ingest_csv_bytes(deal_id, path.name, data)
-    return ingest_pdf_bytes(deal_id, path.name, data)
+        return ingest_csv_to_canonical(expected_tenant, path.name, data)
+    return ingest_pdf_to_canonical(expected_tenant, path.name, data)

@@ -1,89 +1,82 @@
-# Architecture Specification — Zero-Trust M&A Forensic War Room
+# Architecture — AuditBridge (Deloitte × Google Cloud)
 
-## 1. High-Level 5-Zone GCP Architecture
+## 1. Flux Complet
 
 ```text
-[War Room UI (SSE + Upload)]
-       │
-       ├──(PDFs)──▶ [ZONE 1: Security Shield]
-       │               ├── GCS Quarantine Bucket (untrusted raw PDFs)
-       │               ├── Model Armor (chunk-level prompt injection filter) ──▶ Quarantine Sink
-       │               └── Cloud DLP + KMS (crypto-deterministic [IBAN_*]/[PER_*])
-       │
-       └──(CSVs)──▶ [ZONE 2: Hot Hybrid Data Plane]
-                       ├── Firestore Vector Search (text-embedding-005, <300ms)
-                       ├── BigQuery Ledger (war_room.ledger_2025)
-                       └── KMS Token Vault (locked raw PII map)
-                              │
-                              ▼
-                    [ZONE 3: IAM-Scoped ADK Swarm (Cloud Run)]
-                       ├── Legal Agent    (sa-legal    -> Firestore ONLY)
-                       ├── Quant Agent    (sa-quant    -> BigQuery ONLY, dry-run capped)
-                       └── Forensic Agent (sa-forensic -> Cross-doc [IBAN_*] graph)
-                              │
-                              ▼
-                    [ZONE 4: Verification & Telemetry]
-                       ├── Deterministic Python Verifier (chunk_id + quote >=90% + BQ job_id)
-                       ├── Gemini 2.5 Pro Skeptic Critic (max_retries = 2)
-                       └── Cloud Trace (OpenTelemetry) + BigQuery Audit Sink
-                              │
-                              ▼
-                    [ZONE 5: Deal Output & Break-Glass Governance]
-                       ├── Deterministic M&A Price Chip Engine (€ Escrow / CP)
-                       └── Partner HITL Gate -> KMS Unmask + Immutable Audit Log
+           📥 ENTRÉES (CLIENT_A : ERP CSV/JSON | CLIENT_B : PDF + Grand Livre)
+                                         │
+                                         ▼
+╔══════════════ GATE 1 : PARE-FEU CYBER (sans IA) ════════════════════╗
+║ ① Vérification tenant_id (isolation multi-clients)                  ║
+║ ② Model Armor (prompt injection / URL malveillante -> QUARANTAINE)  ║
+║ ③ Pseudonymisation DLP/Python ([PERSONNE_1], [ENTITE_1], [IBAN_1])  ║
+╚══════════════════════════════════════════════════════════════════════╝
+                                         │
+                                         ▼
+┌──────────── NORMALISATION (Passeport Client -> JSON Canonique) ─────┐
+│ Mapping colonnes + règles client (IFRS/PCG, seuil, TVA, clôture)    │
+└──────────────────────────────────────────────────────────────────────┘
+                                         │
+                                         ▼
+┌──────────── AGENTS IA (ADK + Gemini + Règles Python) ───────────────┐
+│ 🔎 Agent Auditeur : 5 règles Python (Cut-off, Concordance, TVA,     │
+│    Intercompagnie, Seuil) -> OK ou ANOMALIE                         │
+│ 🌉 Agent Passerelle (si ANOMALIE) -> 2 Micro-Briefs :               │
+│    ⚖️ Avocat Tax & Legal | 💼 Consultant                            │
+└──────────────────────────────────────────────────────────────────────┘
+                                         │
+                                         ▼
+╔══════════════ GATE 2 : VALIDATION DES EXPERTS 👤 ════════════════════╗
+║ Onglets Avocat & Consultant (Conforme/Non conforme, Livré/Non livré)║
+╚══════════════════════════════════════════════════════════════════════╝
+                                         │
+                                         ▼
+┌──────────── AGENT SYNTHÈSE ─────────────────────────────────────────┐
+│ Score = 100 - 20*(règles échec) - 30*(Avocat) - 30*(Consultant)     │
+└──────────────────────────────────────────────────────────────────────┘
+                                         │
+                                         ▼
+╔══════════════ GATE 3 : DÉCISION DE L'AUDITEUR 👤 ════════════════════╗
+║ L'auditeur valide ou rejette la conclusion                          ║
+╚══════════════════════════════════════════════════════════════════════╝
+                                         │
+                                         ▼
+📄 FICHE DE CONTRÔLE DOCUMENTÉE (Markdown exportable)
+📝 EN CONTINU : Cloud Logging + BigQuery Audit Sink + HUD SSE en direct
 ```
 
 ---
 
-## 2. IAM Least-Privilege Matrix
+## 2. Contrat JSON Canonique
 
-Each specialist agent impersonates a dedicated GCP Service Account via `google.auth.impersonated_credentials` (with graceful local-dev fallback if running without impersonation permissions):
-
-| Service Account | Allowed GCP Roles | Explicitly Denied / Absent |
-| :--- | :--- | :--- |
-| `sa-ingestor` | `storage.objectAdmin` (quarantine), `dlp.user`, `datastore.user`, `bigquery.dataEditor` | Cannot decrypt KMS Break-Glass vault |
-| `sa-legal` | `datastore.viewer`, `aiplatform.user` | **NO** BigQuery access, **NO** GCS raw bucket access |
-| `sa-quant` | `bigquery.dataViewer`, `bigquery.jobUser`, `aiplatform.user` | **NO** Firestore/Vector access, **NO** GCS access |
-| `sa-forensic` | `datastore.viewer`, `aiplatform.user` | **NO** BigQuery financial rows, **NO** KMS decrypt |
-
-### Live Cross-Scope Probe
-Expose `POST /api/security/iam-probe` so the demo can intentionally instruct `sa-legal` to run `SELECT COUNT(*) FROM war_room.ledger_2025`, capturing the real GCP `403 PERMISSION_DENIED` response and streaming it into the Governance HUD.
-
----
-
-## 3. Data & Audit Schemas
-
-### A. Sanitized Document Chunk (Firestore / VectorStore)
 ```json
 {
-  "chunk_id": "c_01_p3_02",
-  "deal_id": "nova_logistics_2025",
-  "doc_name": "01_Customer_Contract_MegaRetail.pdf",
-  "page_num": 3,
-  "text": "Section 14.2 Change of Control: Upon acquisition of >50% equity...",
-  "sha256": "9f86d081...",
-  "embedding": [0.012, -0.044, "..."]
+  "tenant_id": "CLIENT_B",
+  "invoice_id": "F-2026-0412",
+  "supplier": "[ENTITE_1]",
+  "customer": "[ENTITE_2]",
+  "is_intercompany": true,
+  "amount_ht": 2000000,
+  "vat_rate": 0.0,
+  "amount_ttc": 2000000,
+  "invoice_date": "2026-12-28",
+  "service_date": "2027-01-15",
+  "ledger_entry": {"account": "622600", "amount": 2000000, "period": "2026-12"},
+  "description": "Prestations de conseil stratégique",
+  "source_file": "facture_0412.pdf",
+  "security": {"model_armor": "clean", "pii_masked": 3}
 }
 ```
 
-### B. Financial Ledger (`war_room.ledger_2025` in BigQuery)
-| Column | Type | Description |
-| :--- | :--- | :--- |
-| `deal_id` | `STRING` | Tenant isolation key (`nova_logistics_2025`) |
-| `invoice_id` | `STRING` | e.g., `INV-2025-0042` |
-| `counterparty` | `STRING` | Customer or vendor name |
-| `direction` | `STRING` | `REVENUE` or `EXPENSE` |
-| `amount_eur` | `FLOAT64` | Exact euro amount |
-| `invoice_date` | `DATE` | Booking date |
-| `bank_token` | `STRING` | Tokenized IBAN (`[IBAN_4c12]`) |
+---
 
-### C. Immutable Governance Audit Log (`war_room.audit_logs` in BigQuery)
-| Column | Type | Description |
+## 3. Stack GCP : Démo vs À l'Échelle
+
+| Brique | Démo (Codé & Déployé) | À l'échelle (Slide Architecture) |
 | :--- | :--- | :--- |
-| `event_id` | `STRING` | UUID |
-| `timestamp` | `TIMESTAMP` | UTC timestamp |
-| `deal_id` | `STRING` | Tenant deal ID |
-| `agent_name` | `STRING` | `ingestor`, `sa-legal`, `sa-quant`, `skeptic`, `partner_hitl` |
-| `event_type` | `STRING` | `DLP_MASKED`, `MODEL_ARMOR_BLOCK`, `SQL_DRY_RUN`, `IAM_403_BLOCK`, `SKEPTIC_PASS`, `SKEPTIC_REJECT`, `BREAK_GLASS_UNMASK` |
-| `severity` | `STRING` | `INFO`, `WARNING`, `CRITICAL` |
-| `details_json` | `STRING` | Structured payload (token counts, SQL bytes, quote hash, partner ID) |
+| Hébergement | **Cloud Run** | **Cloud Run + Pub/Sub + Cloud Workflows** |
+| IA | **ADK + Gemini (Vertex AI)** | **Vertex AI Agent Engine** |
+| Sécurité IA | **Model Armor** | **Model Armor + VPC Service Controls** |
+| Données personnelles | **Cloud DLP / Pseudonymiseur Python** | **Cloud DLP + KMS** |
+| Traçabilité | **SSE HUD + BigQuery `audit_logs`** | **Cloud Logging + BigQuery immuable** |
+| Validations humaines | **Onglets Web (Gates 2 & 3)** | **Bot Slack / Microsoft Teams + IAP/IAM** |

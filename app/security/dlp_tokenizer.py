@@ -13,7 +13,7 @@ _IBAN_RE = re.compile(r"\b[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b")
 _EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 # Matches Title-case two-word person names near executive/HR labels
 _PERSON_RE = re.compile(
-    r"(?:Chief Executive Officer|Chief Financial Officer|CEO|CFO|Director|Manager|Signed by)\s*:\s*([A-Z][a-z]+ [A-Z][a-z]+)"
+    r"(?:Chief Executive Officer|Chief Financial Officer|CEO|CFO|Director|Manager|Signed by|Signataire)\s*:\s*([A-Z][a-z]+ [A-Z][a-z]+)"
 )
 
 

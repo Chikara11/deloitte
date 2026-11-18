@@ -1,77 +1,76 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Deloitte × Google Cloud — Zero-Trust M&amp;A Forensic War Room</title>
+  <title>AuditBridge — Deloitte × Google Cloud</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen antialiased">
-  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+  <!-- Header: Sélecteur de client + Cas de démo -->
+  <header class="border-b border-slate-800 bg-slate-900/90 px-6 py-3 flex flex-wrap items-center justify-between gap-3">
     <div class="flex items-center gap-3">
-      <div class="h-8 w-8 rounded-lg bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center font-bold text-emerald-400">D</div>
+      <div class="h-9 w-9 rounded-lg bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center font-bold text-emerald-400">AB</div>
       <div>
-        <h1 class="text-sm font-bold tracking-wide text-white">ZERO-TRUST M&amp;A FORENSIC WAR ROOM</h1>
-        <p class="text-xs text-slate-400">Deal: <span class="font-mono text-emerald-400">nova_logistics_2025</span> (€200M Acquisition) • GCP ADK + Model Armor + Cloud DLP</p>
+        <h1 class="text-sm font-bold text-white tracking-wide">AUDITBRIDGE — DELOITTE × GOOGLE CLOUD</h1>
+        <p class="text-xs text-slate-400">Contrôle des Prestations &amp; Transactions Complexes • 3 Gates • ADK + Model Armor + DLP</p>
       </div>
     </div>
+
     <div class="flex flex-wrap items-center gap-2 text-xs">
-      <button onclick="loadSample(false)" class="px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 font-medium">1. Load Clean Data Room</button>
-      <button onclick="loadSample(true)" class="px-3 py-1.5 rounded-md bg-rose-950/70 hover:bg-rose-900/70 border border-rose-700 text-rose-200 font-medium">2. Drop Poisoned PDF</button>
-      <button onclick="runAnalyze()" class="px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-semibold">3. Run ADK Swarm</button>
-      <button onclick="runIamProbe()" class="px-3 py-1.5 rounded-md bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/50 text-amber-300 font-medium">IAM 403 Probe</button>
+      <select id="tenant-select" onchange="switchTenant()" class="px-2.5 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-white font-semibold">
+        <option value="CLIENT_A">CLIENT_A (PCG • ERP CSV • Seuil 50k€)</option>
+        <option value="CLIENT_B" selected>CLIENT_B (IFRS • PDF + GL • Seuil 100k€)</option>
+      </select>
+      <button onclick="loadDemo('normal')" class="px-3 py-1.5 rounded-md bg-emerald-700/80 hover:bg-emerald-600 text-white font-medium">✅ Cas 1 : Normal (A)</button>
+      <button onclick="loadDemo('interco')" class="px-3 py-1.5 rounded-md bg-amber-600/80 hover:bg-amber-500 text-white font-medium">⚠️ Cas 2 : Interco 2M€ (B)</button>
+      <button onclick="loadDemo('poisoned')" class="px-3 py-1.5 rounded-md bg-rose-700/80 hover:bg-rose-600 text-white font-medium">🛡️ Cas 3 : PDF Piégé</button>
+      <button onclick="testIsolation()" class="px-2.5 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200">Test Isolation</button>
+      <button onclick="runIamProbe()" class="px-2.5 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300">IAM 403</button>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-    <!-- Left Column: Business War Room -->
+  <main class="max-w-7xl mx-auto p-5 grid grid-cols-1 lg:grid-cols-12 gap-5">
+    <!-- Centre: Factures + Onglets par Rôle + Fiche de Contrôle -->
     <section class="lg:col-span-7 space-y-4">
-      <!-- Upload + Status Banner -->
-      <div class="rounded-xl bg-slate-900 border border-slate-800 p-4 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div class="text-xs uppercase tracking-wider text-slate-400">Deal Risk Verdict</div>
-          <div id="deal-status" class="text-xl font-bold text-slate-200 mt-0.5">Awaiting Ingestion</div>
-        </div>
-        <div class="text-right">
-          <div class="text-xs uppercase tracking-wider text-slate-400">Adjusted Valuation (Price Chip)</div>
-          <div id="adjusted-price" class="text-xl font-mono font-bold text-emerald-400 mt-0.5">€200,000,000</div>
-        </div>
-      </div>
-
-      <!-- Drag & Drop / File Upload -->
-      <div class="rounded-xl bg-slate-900/60 border border-dashed border-slate-700 p-3 flex items-center justify-between gap-3 text-xs">
-        <span class="text-slate-400">Upload custom PDF or CSV into GCS Quarantine Shield:</span>
-        <input id="file-input" type="file" accept=".pdf,.csv" onchange="uploadSelectedFile()" class="text-slate-300 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700" />
-      </div>
-
-      <!-- Verified Findings -->
-      <div class="rounded-xl bg-slate-900 border border-slate-800 p-4 space-y-3">
+      <!-- Liste des factures -->
+      <div class="rounded-xl bg-slate-900 border border-slate-800 p-4 space-y-2.5">
         <div class="flex items-center justify-between">
-          <h2 class="text-sm font-bold text-white">Skeptic-Verified Deal Breakers</h2>
-          <button id="break-glass-btn" onclick="breakGlassUnmask()" disabled class="px-3 py-1 rounded bg-indigo-600 disabled:opacity-40 hover:bg-indigo-500 text-xs font-semibold text-white">Partner Break-Glass Unmask</button>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Factures &amp; Pièces Normalisées (JSON Canonique)</h2>
+          <span id="status-banner" class="text-xs font-mono text-emerald-400">Prêt</span>
         </div>
-        <div id="findings-list" class="space-y-2.5 text-xs text-slate-400">Run analysis to inspect verified findings.</div>
+        <div id="cases-list" class="space-y-2 text-xs text-slate-400">Cliquez sur un cas de démo ci-dessus pour démarrer.</div>
       </div>
 
-      <!-- Entity Graph + Price Chips -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="rounded-xl bg-slate-900 border border-slate-800 p-4 space-y-2">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Forensic Entity Graph (Tokenized)</h3>
-          <div id="entity-graph" class="space-y-1.5 text-xs text-slate-400">No graph edges yet.</div>
+      <!-- Onglets par rôle (Gate 2 & Gate 3) -->
+      <div class="rounded-xl bg-slate-900 border border-slate-800 p-4 space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+          <div class="flex gap-2 text-xs">
+            <button onclick="setTab('AUDITEUR')" id="tab-AUDITEUR" class="px-3 py-1.5 rounded font-semibold bg-emerald-600 text-white">🔎 Auditeur (Gate 3)</button>
+            <button onclick="setTab('AVOCAT')" id="tab-AVOCAT" class="px-3 py-1.5 rounded font-semibold bg-slate-800 text-slate-300">⚖️ Avocat Tax &amp; Legal (Gate 2)</button>
+            <button onclick="setTab('CONSULTANT')" id="tab-CONSULTANT" class="px-3 py-1.5 rounded font-semibold bg-slate-800 text-slate-300">💼 Consultant (Gate 2)</button>
+          </div>
+          <div id="score-badge" class="px-2.5 py-1 rounded font-mono text-xs font-bold bg-slate-800 text-slate-300">Score: --/100</div>
         </div>
-        <div class="rounded-xl bg-slate-900 border border-slate-800 p-4 space-y-2">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">M&amp;A Price Chip Breakdown</h3>
-          <div id="price-chips" class="space-y-1.5 text-xs text-slate-400">No valuation adjustments yet.</div>
+        <div id="role-panel" class="text-xs text-slate-300 space-y-3">Sélectionnez une facture pour inspecter les règles ou valider.</div>
+      </div>
+
+      <!-- Bas: Fiche de contrôle générée -->
+      <div class="rounded-xl bg-slate-900 border border-slate-800 p-4 space-y-2">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">📄 Fiche de Contrôle Documentée (Livrable Audit)</h2>
+          <button onclick="exportFiche()" class="px-3 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white">Exporter (.md)</button>
         </div>
+        <pre id="fiche-preview" class="text-xs font-mono whitespace-pre-wrap bg-slate-950 border border-slate-800 rounded-lg p-3 max-h-64 overflow-y-auto text-slate-300">Aucune fiche générée.</pre>
       </div>
     </section>
 
-    <!-- Right Column: Security & Governance HUD -->
-    <aside class="lg:col-span-5 rounded-xl bg-slate-900 border border-slate-800 p-4 flex flex-col h-[78vh]">
+    <!-- Droite: Sécurité & Gouvernance en direct -->
+    <aside class="lg:col-span-5 rounded-xl bg-slate-900 border border-slate-800 p-4 flex flex-col h-[82vh]">
       <div class="flex items-center justify-between pb-3 border-b border-slate-800">
         <div>
-          <h2 class="text-sm font-bold text-white">Live Security &amp; Governance HUD</h2>
-          <p class="text-xs text-slate-400">Model Armor • Cloud DLP • IAM 403s • Skeptic Audit</p>
+          <h2 class="text-sm font-bold text-white">Sécurité &amp; Gouvernance en direct</h2>
+          <p class="text-xs text-slate-400">Tenant ID • Model Armor • DLP • Gates 2/3 • BigQuery</p>
         </div>
         <span class="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-xs font-mono">SSE LIVE</span>
       </div>
@@ -80,139 +79,173 @@
   </main>
 
   <script>
-    const DEAL_ID = "nova_logistics_2025";
-    const hud = document.getElementById("hud-feed");
+    let currentTenant = "CLIENT_B";
+    let cases = [];
+    let selectedCaseId = null;
+    let activeTab = "AUDITEUR";
+    let sse = null;
+
+    function connectSSE() {
+      if (sse) sse.close();
+      sse = new EventSource(`/api/tenants/${currentTenant}/events`);
+      sse.addEventListener("audit", (e) => appendHud(JSON.parse(e.data)));
+    }
 
     function appendHud(evt) {
-      const color = evt.severity === "CRITICAL"
-        ? "border-rose-700/80 bg-rose-950/40 text-rose-200"
+      const hud = document.getElementById("hud-feed");
+      const cls = evt.severity === "CRITICAL"
+        ? "border-rose-700 bg-rose-950/50 text-rose-200"
         : evt.severity === "WARNING"
-        ? "border-amber-700/80 bg-amber-950/40 text-amber-200"
+        ? "border-amber-700 bg-amber-950/40 text-amber-200"
         : "border-slate-800 bg-slate-950/70 text-slate-300";
-
-      const div = document.createElement("div");
-      div.className = `rounded-lg border p-2.5 ${color}`;
-      div.innerHTML = `
-        <div class="flex items-center justify-between gap-2 mb-1">
-          <span class="font-bold">[${evt.event_type}]</span>
-          <span class="text-slate-400">${evt.agent_name}</span>
-        </div>
-        <div class="text-[11px] opacity-90 break-words">${JSON.stringify(evt.details)}</div>
-      `;
-      hud.prepend(div);
+      const d = document.createElement("div");
+      d.className = `rounded-lg border p-2.5 ${cls}`;
+      d.innerHTML = `<div class="flex justify-between font-bold mb-1"><span>[${evt.event_type}]</span><span class="text-slate-400">${evt.agent_name}</span></div><div class="text-[11px] break-words opacity-90">${JSON.stringify(evt.details)}</div>`;
+      hud.prepend(d);
     }
 
-    const sse = new EventSource(`/api/deals/${DEAL_ID}/events`);
-    sse.addEventListener("audit", (e) => appendHud(JSON.parse(e.data)));
-
-    function setLoading(label) {
-      const statusEl = document.getElementById("deal-status");
-      statusEl.textContent = label;
-      statusEl.className = "text-xl font-bold text-sky-400 animate-pulse mt-0.5";
+    function switchTenant() {
+      currentTenant = document.getElementById("tenant-select").value;
+      document.getElementById("hud-feed").innerHTML = "";
+      connectSSE();
     }
 
-    async function loadSample(includePoisoned) {
-      try {
-        hud.innerHTML = "";
-        setLoading(includePoisoned ? "⏳ Dropping Poisoned PDF into Quarantine..." : "⏳ Ingesting Data Room & DLP/Model Armor...");
-        const r1 = await fetch(`/api/deals/${DEAL_ID}/load-sample?include_poisoned=${includePoisoned}`, { method: "POST" });
-        if (!r1.ok) throw new Error(`Ingest failed: HTTP ${r1.status}`);
-        await runAnalyze();
-      } catch (err) {
-        document.getElementById("deal-status").textContent = `Error: ${err.message}`;
-        document.getElementById("deal-status").className = "text-xl font-bold text-rose-400 mt-0.5";
+    async function loadDemo(caseType) {
+      if (caseType === "normal") {
+        document.getElementById("tenant-select").value = "CLIENT_A";
+      } else {
+        document.getElementById("tenant-select").value = "CLIENT_B";
       }
+      switchTenant();
+      document.getElementById("status-banner").textContent = "⏳ Gate 1 + Agents en cours...";
+      const res = await fetch(`/api/tenants/${currentTenant}/load-demo?case_type=${caseType}`, { method: "POST" });
+      const data = await res.json();
+      cases = data.cases;
+      selectedCaseId = cases[0]?.case_id || null;
+      document.getElementById("status-banner").textContent = `${cases.length} dossier(s) traité(s)`;
+      renderAll();
     }
 
-    async function uploadSelectedFile() {
-      const input = document.getElementById("file-input");
-      if (!input.files.length) return;
-      try {
-        setLoading(`⏳ Scanning ${input.files[0].name} with Model Armor & DLP...`);
-        const fd = new FormData();
-        fd.append("file", input.files[0]);
-        const r1 = await fetch(`/api/deals/${DEAL_ID}/upload`, { method: "POST", body: fd });
-        if (!r1.ok) throw new Error(`Upload failed: HTTP ${r1.status}`);
-        await runAnalyze();
-      } catch (err) {
-        document.getElementById("deal-status").textContent = `Error: ${err.message}`;
-        document.getElementById("deal-status").className = "text-xl font-bold text-rose-400 mt-0.5";
-      }
-    }
-
-    async function runAnalyze() {
-      try {
-        setLoading("⏳ Running 3 IAM-Scoped ADK Agents + Skeptic Gate...");
-        const res = await fetch(`/api/deals/${DEAL_ID}/analyze`, { method: "POST" });
-        if (!res.ok) throw new Error(`Analyze failed: HTTP ${res.status}`);
-        const report = await res.json();
-        renderReport(report);
-      } catch (err) {
-        document.getElementById("deal-status").textContent = `Error: ${err.message}`;
-        document.getElementById("deal-status").className = "text-xl font-bold text-rose-400 mt-0.5";
-      }
+    async function testIsolation() {
+      document.getElementById("status-banner").textContent = "⏳ Test isolation multi-client...";
+      const res = await fetch(`/api/tenants/${currentTenant}/test-isolation`, { method: "POST" });
+      const data = await res.json();
+      cases = [...cases, ...data.cases];
+      selectedCaseId = data.cases[0]?.case_id || selectedCaseId;
+      document.getElementById("status-banner").textContent = "🛡️ Isolation vérifiée";
+      renderAll();
     }
 
     async function runIamProbe() {
-      await fetch(`/api/security/iam-probe?deal_id=${DEAL_ID}`, { method: "POST" });
+      await fetch(`/api/security/iam-probe?tenant_id=${currentTenant}`, { method: "POST" });
     }
 
-    async function breakGlassUnmask() {
-      const res = await fetch(`/api/deals/${DEAL_ID}/break-glass`, {
+    function setTab(tab) {
+      activeTab = tab;
+      ["AUDITEUR", "AVOCAT", "CONSULTANT"].forEach(t => {
+        document.getElementById(`tab-${t}`).className = t === tab
+          ? "px-3 py-1.5 rounded font-semibold bg-emerald-600 text-white"
+          : "px-3 py-1.5 rounded font-semibold bg-slate-800 text-slate-300";
+      });
+      renderRolePanel();
+    }
+
+    function selectCase(cid) {
+      selectedCaseId = cid;
+      renderAll();
+    }
+
+    function renderAll() {
+      const list = document.getElementById("cases-list");
+      list.innerHTML = cases.map(c => {
+        const icon = c.status === "QUARANTINE" ? "🛡️" : (c.status === "ANOMALIE" || c.score_color === "RED" ? "⚠️" : "✅");
+        const active = c.case_id === selectedCaseId ? "border-emerald-500 bg-slate-950" : "border-slate-800 bg-slate-950/50";
+        return `<button onclick="selectCase('${c.case_id}')" class="w-full text-left rounded-lg border p-2.5 flex items-center justify-between ${active}">
+          <div><span class="font-bold text-white">${icon} ${c.invoice.invoice_id}</span> <span class="text-slate-400">(${c.invoice.source_file})</span><div class="text-[11px] text-slate-400">${c.invoice.supplier} → ${c.invoice.customer}</div></div>
+          <div class="text-right font-mono"><div class="text-white font-bold">${Number(c.invoice.amount_ht).toLocaleString()} €</div><div class="text-[11px]">${c.status} (${c.confidence_score}/100)</div></div>
+        </button>`;
+      }).join("");
+      renderRolePanel();
+    }
+
+    function renderRolePanel() {
+      const c = cases.find(x => x.case_id === selectedCaseId);
+      if (!c) return;
+      const sb = document.getElementById("score-badge");
+      sb.textContent = `Score: ${c.confidence_score}/100 (${c.score_color})`;
+      sb.className = c.score_color === "GREEN"
+        ? "px-2.5 py-1 rounded font-mono text-xs font-bold bg-emerald-500/20 text-emerald-300"
+        : c.score_color === "ORANGE"
+        ? "px-2.5 py-1 rounded font-mono text-xs font-bold bg-amber-500/20 text-amber-300"
+        : "px-2.5 py-1 rounded font-mono text-xs font-bold bg-rose-500/20 text-rose-300";
+
+      document.getElementById("fiche-preview").textContent = c.fiche_controle_md;
+
+      const panel = document.getElementById("role-panel");
+      if (c.status === "QUARANTINE") {
+        panel.innerHTML = `<div class="p-3 rounded-lg bg-rose-950/50 border border-rose-700 text-rose-200 font-semibold">${c.recommendation}</div>`;
+        return;
+      }
+
+      if (activeTab === "AUDITEUR") {
+        const rulesHtml = c.rules.map(r => `<div class="flex justify-between p-2 rounded bg-slate-950 border border-slate-800"><span>${r.passed ? "✅" : "❌"} <b>${r.rule_id}</b> — ${r.evidence}</span></div>`).join("");
+        panel.innerHTML = `
+          <div class="p-2.5 rounded bg-slate-950 border border-slate-800 text-slate-200">${c.auditor_explanation}</div>
+          <div class="space-y-1.5">${rulesHtml}</div>
+          <div class="p-2.5 rounded bg-slate-950 border border-slate-700"><b>Recommandation Synthèse :</b> ${c.recommendation}</div>
+          <div class="flex gap-2 pt-1">
+            <button onclick="sendGate3('VALIDER')" class="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold">Gate 3 : Valider Conclusion</button>
+            <button onclick="sendGate3('REJETER')" class="px-3 py-1.5 rounded bg-rose-700 hover:bg-rose-600 text-white font-semibold">Gate 3 : Rejeter</button>
+          </div>`;
+      } else {
+        const brief = c.micro_briefs.find(b => b.role === activeTab);
+        if (!brief) {
+          panel.innerHTML = `<div class="p-3 rounded bg-emerald-950/40 border border-emerald-700 text-emerald-200">Aucune anomalie — aucun Micro-Brief requis pour ${activeTab}.</div>`;
+          return;
+        }
+        const existing = c.expert_responses[activeTab];
+        const btns = brief.options.map(opt => `<button onclick="sendGate2('${activeTab}', '${opt}')" class="px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">${opt}</button>`).join("");
+        panel.innerHTML = `
+          <div class="p-3 rounded-lg bg-slate-950 border border-slate-800 space-y-1.5">
+            <div class="font-bold text-white">${brief.title}</div>
+            <p class="text-slate-300">${brief.context_summary}</p>
+            <div class="text-amber-300 font-semibold pt-1">${brief.question}</div>
+          </div>
+          <input id="expert-comment" placeholder="Commentaire expert (optionnel)..." class="w-full px-3 py-1.5 rounded bg-slate-950 border border-slate-700 text-white" />
+          <div class="flex flex-wrap gap-2">${btns}</div>
+          ${existing ? `<div class="text-emerald-400 font-mono">✓ Réponse enregistrée : ${existing.decision} (${existing.timestamp})</div>` : ""}`;
+      }
+    }
+
+    async function sendGate2(role, decision) {
+      const comment = document.getElementById("expert-comment")?.value || "";
+      const res = await fetch(`/api/cases/${encodeURIComponent(selectedCaseId)}/gate2`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ partner_id: "partner.ma@deloitte.fr", reason: "Final Investment Committee Sign-Off" })
+        body: JSON.stringify({ role, decision, comment, responder_id: `${role.toLowerCase()}@deloitte.fr` })
       });
-      const data = await res.json();
-      renderReport(data.report);
+      const updated = await res.json();
+      cases = cases.map(x => x.case_id === updated.case_id ? updated : x);
+      renderAll();
     }
 
-    function renderReport(r) {
-      const statusEl = document.getElementById("deal-status");
-      statusEl.textContent = r.deal_status.replaceAll("_", " ");
-      statusEl.className = r.deal_status === "CRITICAL_WALK_AWAY"
-        ? "text-xl font-bold text-rose-400 mt-0.5"
-        : "text-xl font-bold text-amber-300 mt-0.5";
-
-      document.getElementById("adjusted-price").textContent =
-        `€${Number(r.adjusted_price_eur).toLocaleString()} (Chip: €${Number(r.total_price_chip_eur).toLocaleString()})`;
-
-      document.getElementById("break-glass-btn").disabled = r.pii_unmasked;
-
-      const fl = document.getElementById("findings-list");
-      fl.innerHTML = r.findings.map(f => `
-        <div class="rounded-lg border border-slate-800 bg-slate-950/70 p-3 space-y-1">
-          <div class="flex items-center justify-between gap-2">
-            <span class="font-bold text-white">${f.finding_id} • ${f.title}</span>
-            <span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-mono">${f.severity}</span>
-          </div>
-          <p class="text-slate-300">${f.summary}</p>
-          <div class="text-[11px] font-mono text-emerald-400">✓ ${f.verification_note}</div>
-        </div>
-      `).join("");
-
-      const eg = document.getElementById("entity-graph");
-      eg.innerHTML = r.entity_graph.edges.length
-        ? r.entity_graph.edges.map(e => `
-            <div class="p-2 rounded bg-slate-950 border border-slate-800 font-mono">
-              <span class="text-indigo-300">${e.source}</span>
-              <span class="text-slate-500"> —[${e.relation}]→ </span>
-              <span class="text-amber-300">${e.target}</span>
-            </div>
-          `).join("")
-        : "No cross-document IBAN collisions detected.";
-
-      const pc = document.getElementById("price-chips");
-      pc.innerHTML = r.price_chips.map(c => `
-        <div class="p-2 rounded bg-slate-950 border border-slate-800">
-          <div class="flex justify-between font-semibold text-slate-200">
-            <span>${c.rule_name}</span>
-            <span class="font-mono text-rose-400">€${Number(c.impact_eur).toLocaleString()}</span>
-          </div>
-          <div class="text-slate-400 mt-0.5">${c.action}</div>
-        </div>
-      `).join("");
+    async function sendGate3(decision) {
+      const res = await fetch(`/api/cases/${encodeURIComponent(selectedCaseId)}/gate3`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ decision, auditor_id: "auditeur.senior@deloitte.fr" })
+      });
+      const updated = await res.json();
+      cases = cases.map(x => x.case_id === updated.case_id ? updated : x);
+      renderAll();
     }
+
+    function exportFiche() {
+      if (!selectedCaseId) return;
+      window.open(`/api/cases/${encodeURIComponent(selectedCaseId)}/fiche`, "_blank");
+    }
+
+    connectSSE();
   </script>
 </body>
 </html>

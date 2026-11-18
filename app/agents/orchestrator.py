@@ -1,67 +1,78 @@
-"""Multi-agent orchestrator: parallel IAM-scoped fan-out -> Skeptic Gate -> Price Chip."""
+"""AuditBridge orchestrator: Gate 1 -> Auditeur -> Passerelle -> Gate 2 -> Synthèse -> Gate 3."""
 
 from __future__ import annotations
 
-import asyncio
+from datetime import datetime, timezone
 
-from app.agents.forensic_agent import run_forensic_agent
-from app.agents.legal_agent import run_legal_agent
-from app.agents.models import DealReport, Finding
-from app.agents.price_chip import compute_price_chips
-from app.agents.quant_agent import run_quant_agent
-from app.agents.skeptic_agent import verify_findings
+from app.agents.auditeur_agent import run_auditeur_agent
+from app.agents.fiche_controle import generate_fiche_controle
+from app.agents.models import AuditCase, CanonicalInvoice, ExpertResponse
+from app.agents.passerelle_agent import run_passerelle_agent
+from app.agents.synthese_agent import compute_synthesis
 from app.data.audit_logger import audit_logger
 
 
-async def run_due_diligence(deal_id: str) -> DealReport:
-    """Execute the 3 specialist agents in parallel, verify with Skeptic, and price risks."""
-    legal_task = asyncio.to_thread(run_legal_agent, deal_id)
-    quant_task = asyncio.to_thread(run_quant_agent, deal_id)
-    forensic_task = asyncio.to_thread(run_forensic_agent, deal_id)
+def evaluate_invoice(invoice: CanonicalInvoice) -> AuditCase:
+    """Run Agent Auditeur + Agent Passerelle (if anomaly) + initial Synthèse & Fiche."""
+    status, rules, explanation = run_auditeur_agent(invoice)
+    briefs = run_passerelle_agent(invoice, rules) if status == "ANOMALIE" else []
 
-    legal_findings, quant_findings, (forensic_findings, graph) = await asyncio.gather(
-        legal_task, quant_task, forensic_task
+    case = AuditCase(
+        case_id=f"{invoice.tenant_id}:{invoice.invoice_id}",
+        tenant_id=invoice.tenant_id,
+        invoice=invoice,
+        status=status,
+        rules=rules,
+        auditor_explanation=explanation,
+        micro_briefs=briefs,
     )
+    score, color, rec = compute_synthesis(invoice.tenant_id, invoice.invoice_id, rules, {})
+    case.confidence_score = score
+    case.score_color = color
+    case.recommendation = rec
+    case.fiche_controle_md = generate_fiche_controle(case)
+    return case
 
-    # Convert any Model Armor quarantine events for this deal into a Cyber/Forensic finding
-    tamper_events = [
-        e
-        for e in audit_logger.list_events(deal_id)
-        if e.event_type == "MODEL_ARMOR_BLOCK"
-    ]
-    cyber_findings: list[Finding] = []
-    if tamper_events:
-        first = tamper_events[0].details
-        cyber_findings.append(
-            Finding(
-                finding_id="CYB-01",
-                agent="model-armor",
-                category="CYBER_TAMPERING",
-                severity="CRITICAL",
-                title="Active Seller Document Tampering (Indirect Prompt Injection Blocked)",
-                summary=(
-                    f"Model Armor intercepted and quarantined {len(tamper_events)} malicious instruction "
-                    f"chunk(s) in {first.get('doc_name', 'uploaded PDF')} (p.{first.get('page_num', 1)})."
-                ),
-                doc_name=first.get("doc_name"),
-                page_num=first.get("page_num"),
-                exact_quote=first.get("snippet_preview"),
-            )
-        )
 
-    all_candidates = legal_findings + quant_findings + forensic_findings + cyber_findings
-    verified = verify_findings(deal_id, all_candidates, max_retries=2)
-    status, total_chip, adjusted_price, chips = compute_price_chips(verified)
-
-    return DealReport(
-        deal_id=deal_id,
-        deal_status=status,
-        proposed_price_eur=200_000_000.0,
-        adjusted_price_eur=adjusted_price,
-        total_price_chip_eur=total_chip,
-        price_chips=chips,
-        findings=verified,
-        entity_graph=graph,
-        tampering_detected=bool(tamper_events),
-        pii_unmasked=False,
+def apply_expert_response(case: AuditCase, role: str, decision: str, comment: str, responder_id: str) -> AuditCase:
+    """Gate 2: record Avocat or Consultant validation and recompute Synthèse + Fiche."""
+    case.expert_responses[role.upper()] = ExpertResponse(
+        role=role.upper(),
+        decision=decision,
+        comment=comment,
+        responder_id=responder_id,
+        timestamp=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
     )
+    audit_logger.log(
+        deal_id=case.tenant_id,
+        agent_name=f"gate2_{role.lower()}",
+        event_type="EXPERT_GATE2_RESPONSE",
+        severity="INFO",
+        details={"invoice_id": case.invoice.invoice_id, "role": role.upper(), "decision": decision},
+    )
+    score, color, rec = compute_synthesis(case.tenant_id, case.invoice.invoice_id, case.rules, case.expert_responses)
+    case.confidence_score = score
+    case.score_color = color
+    case.recommendation = rec
+    case.fiche_controle_md = generate_fiche_controle(case)
+    return case
+
+
+def apply_auditor_gate3(case: AuditCase, decision: str, auditor_id: str, comment: str = "") -> AuditCase:
+    """Gate 3: final Auditor sign-off or rejection."""
+    case.status = "VALIDATED" if decision.upper() == "VALIDER" else "REJECTED"
+    case.auditor_gate3 = {
+        "decision": decision.upper(),
+        "auditor_id": auditor_id,
+        "comment": comment,
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+    }
+    audit_logger.log(
+        deal_id=case.tenant_id,
+        agent_name="gate3_auditeur",
+        event_type="AUDITOR_GATE3_DECISION",
+        severity="INFO",
+        details={"invoice_id": case.invoice.invoice_id, "decision": decision.upper(), "auditor_id": auditor_id},
+    )
+    case.fiche_controle_md = generate_fiche_controle(case)
+    return case
