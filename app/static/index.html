@@ -105,25 +105,52 @@
     const sse = new EventSource(`/api/deals/${DEAL_ID}/events`);
     sse.addEventListener("audit", (e) => appendHud(JSON.parse(e.data)));
 
+    function setLoading(label) {
+      const statusEl = document.getElementById("deal-status");
+      statusEl.textContent = label;
+      statusEl.className = "text-xl font-bold text-sky-400 animate-pulse mt-0.5";
+    }
+
     async function loadSample(includePoisoned) {
-      hud.innerHTML = "";
-      await fetch(`/api/deals/${DEAL_ID}/load-sample?include_poisoned=${includePoisoned}`, { method: "POST" });
-      await runAnalyze();
+      try {
+        hud.innerHTML = "";
+        setLoading(includePoisoned ? "⏳ Dropping Poisoned PDF into Quarantine..." : "⏳ Ingesting Data Room & DLP/Model Armor...");
+        const r1 = await fetch(`/api/deals/${DEAL_ID}/load-sample?include_poisoned=${includePoisoned}`, { method: "POST" });
+        if (!r1.ok) throw new Error(`Ingest failed: HTTP ${r1.status}`);
+        await runAnalyze();
+      } catch (err) {
+        document.getElementById("deal-status").textContent = `Error: ${err.message}`;
+        document.getElementById("deal-status").className = "text-xl font-bold text-rose-400 mt-0.5";
+      }
     }
 
     async function uploadSelectedFile() {
       const input = document.getElementById("file-input");
       if (!input.files.length) return;
-      const fd = new FormData();
-      fd.append("file", input.files[0]);
-      await fetch(`/api/deals/${DEAL_ID}/upload`, { method: "POST", body: fd });
-      await runAnalyze();
+      try {
+        setLoading(`⏳ Scanning ${input.files[0].name} with Model Armor & DLP...`);
+        const fd = new FormData();
+        fd.append("file", input.files[0]);
+        const r1 = await fetch(`/api/deals/${DEAL_ID}/upload`, { method: "POST", body: fd });
+        if (!r1.ok) throw new Error(`Upload failed: HTTP ${r1.status}`);
+        await runAnalyze();
+      } catch (err) {
+        document.getElementById("deal-status").textContent = `Error: ${err.message}`;
+        document.getElementById("deal-status").className = "text-xl font-bold text-rose-400 mt-0.5";
+      }
     }
 
     async function runAnalyze() {
-      const res = await fetch(`/api/deals/${DEAL_ID}/analyze`, { method: "POST" });
-      const report = await res.json();
-      renderReport(report);
+      try {
+        setLoading("⏳ Running 3 IAM-Scoped ADK Agents + Skeptic Gate...");
+        const res = await fetch(`/api/deals/${DEAL_ID}/analyze`, { method: "POST" });
+        if (!res.ok) throw new Error(`Analyze failed: HTTP ${res.status}`);
+        const report = await res.json();
+        renderReport(report);
+      } catch (err) {
+        document.getElementById("deal-status").textContent = `Error: ${err.message}`;
+        document.getElementById("deal-status").className = "text-xl font-bold text-rose-400 mt-0.5";
+      }
     }
 
     async function runIamProbe() {

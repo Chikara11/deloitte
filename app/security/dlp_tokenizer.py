@@ -114,6 +114,10 @@ class DlpTokenizer:
             provider=provider,
         )
 
+    def tokenize_iban(self, raw_iban: str) -> str:
+        """Fast deterministic IBAN tokenization for structured CSV/ledger rows."""
+        return self._surrogate("IBAN", raw_iban)
+
     def unmask(self, text: str) -> str:
         """Break-Glass re-identification of surrogate tokens."""
         out = text

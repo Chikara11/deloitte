@@ -106,10 +106,10 @@ def ingest_csv_bytes(deal_id: str, filename: str, data: bytes) -> dict[str, Any]
     reader = csv.DictReader(io.StringIO(text))
     rows: list[dict[str, Any]] = []
     for row in reader:
-        # Deterministically tokenize IBANs in ledger rows too
+        # Deterministically tokenize IBANs in ledger rows without 200 sequential DLP RPCs
         iban_raw = row.get("bank_token", "")
         if iban_raw and not iban_raw.startswith("[IBAN_"):
-            iban_tok = dlp_tokenizer.deidentify(iban_raw).sanitized_text
+            iban_tok = dlp_tokenizer.tokenize_iban(iban_raw)
         else:
             iban_tok = iban_raw
         rows.append(
