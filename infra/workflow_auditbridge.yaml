@@ -1,0 +1,141 @@
+# Cloud Workflows — AuditBridge Human Gates orchestration
+#
+# Trigger : Eventarc on Pub/Sub topic "auditbridge-case-evaluated"
+#           (published by the Cloud Run API after Gate 1 + Agent Auditeur, see app/infra/pubsub.py)
+# Pattern : one durable workflow execution per invoice. Each human gate is a callback endpoint:
+#           the execution sleeps (no compute billed) until the expert clicks in the UI, then
+#           forwards the decision to the existing Cloud Run endpoints (/gate2, /gate3).
+# Deploy  : scripts/deploy_scale.sh
+main:
+  params: [event]
+  steps:
+    - init:
+        assign:
+          - msg: ${json.decode(base64.decode(event.data.message.data))}
+          - case_id: ${msg.case_id}
+          - tenant_id: ${msg.tenant_id}
+          - api: ${sys.get_env("AUDITBRIDGE_URL")}
+          - case_url: ${api + "/api/cases/" + text.url_encode(case_id)}
+          - responses: {}
+
+    - route_by_status:
+        switch:
+          - condition: ${msg.status == "QUARANTINE"}
+            next: quarantined
+          - condition: ${msg.status != "ANOMALIE"}
+            next: gate3_auditor
+
+    # Gate 2 — Avocat (Tax & Legal) and Consultant answer in parallel
+    - gate2_experts:
+        parallel:
+          shared: [responses]
+          for:
+            value: role
+            in: ${msg.expert_roles}
+            steps:
+              - create_cb:
+                  call: events.create_callback_endpoint
+                  args:
+                    http_callback_method: "POST"
+                  result: cb
+              - notify_expert:
+                  call: sys.log
+                  args:
+                    severity: "NOTICE"
+                    json:
+                      event: "GATE2_BRIEF_SENT"
+                      case_id: ${case_id}
+                      role: ${role}
+                      callback_url: ${cb.url}
+              - wait_expert:
+                  try:
+                    call: events.await_callback
+                    args:
+                      callback: ${cb}
+                      timeout: 172800  # 48h SLA, then escalation
+                    result: answer
+                  except:
+                    as: e
+                    steps:
+                      - escalate:
+                          call: sys.log
+                          args:
+                            severity: "WARNING"
+                            json:
+                              event: "GATE2_SLA_EXCEEDED"
+                              case_id: ${case_id}
+                              role: ${role}
+                      - give_up:
+                          raise: ${e}
+              - forward_gate2:
+                  call: http.post
+                  args:
+                    url: ${case_url + "/gate2"}
+                    auth:
+                      type: OIDC
+                    headers:
+                      X-Tenant-Id: ${tenant_id}
+                    body:
+                      role: ${role}
+                      decision: ${answer.http_request.body.decision}
+                      comment: ${default(map.get(answer.http_request.body, "comment"), "")}
+                      responder_id: ${default(map.get(answer.http_request.body, "responder_id"), "")}
+                  result: gate2_result
+              - store:
+                  assign:
+                    - responses[role]: ${answer.http_request.body.decision}
+
+    # Gate 3 — Auditor signs (only reached once both experts answered)
+    - gate3_auditor:
+        steps:
+          - create_cb_auditor:
+              call: events.create_callback_endpoint
+              args:
+                http_callback_method: "POST"
+              result: cb_auditor
+          - notify_auditor:
+              call: sys.log
+              args:
+                severity: "NOTICE"
+                json:
+                  event: "GATE3_READY"
+                  case_id: ${case_id}
+                  expert_responses: ${responses}
+                  callback_url: ${cb_auditor.url}
+          - wait_auditor:
+              call: events.await_callback
+              args:
+                callback: ${cb_auditor}
+                timeout: 604800  # 7 days
+              result: auditor
+          - forward_gate3:
+              call: http.post
+              args:
+                url: ${case_url + "/gate3"}
+                auth:
+                  type: OIDC
+                headers:
+                  X-Tenant-Id: ${tenant_id}
+                body:
+                  decision: ${auditor.http_request.body.decision}
+                  auditor_id: ${default(map.get(auditor.http_request.body, "auditor_id"), "")}
+              result: gate3_result
+          - done:
+              return:
+                case_id: ${case_id}
+                status: ${gate3_result.body.status}
+                confidence_score: ${gate3_result.body.confidence_score}
+
+    - quarantined:
+        steps:
+          - log_quarantine:
+              call: sys.log
+              args:
+                severity: "ALERT"
+                json:
+                  event: "GATE1_QUARANTINE"
+                  case_id: ${case_id}
+          - stop:
+              return:
+                case_id: ${case_id}
+                status: "QUARANTINE"

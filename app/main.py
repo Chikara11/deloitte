@@ -17,6 +17,7 @@ from app.agents.orchestrator import apply_auditor_gate3, apply_expert_response, 
 from app.data.audit_logger import audit_logger
 from app.data.ingest import QuarantineError, ingest_csv_to_canonical, ingest_file, ingest_pdf_to_canonical
 from app.data.passports import PASSPORTS
+from app.infra.pubsub import publish_case_evaluated
 from app.security.iam_impersonator import probe_cross_scope_access
 from scripts.generate_data import generate_demo_files
 
@@ -92,6 +93,7 @@ def _ingest_and_evaluate(tenant_id: str, path: Path) -> list[AuditCase]:
         for inv in invoices:
             case = evaluate_invoice(inv)
             _CASES[case.case_id] = case
+            publish_case_evaluated(case)
             out.append(case)
         return out
     except QuarantineError as qerr:
@@ -123,6 +125,7 @@ def _ingest_and_evaluate(tenant_id: str, path: Path) -> list[AuditCase]:
             fiche_controle_md=f"# QUARANTAINE SÉCURITÉ — {path.name}\n\n- **Raison :** {qerr.reason}\n",
         )
         _CASES[q_case.case_id] = q_case
+        publish_case_evaluated(q_case)
         return [q_case]
 
 
@@ -178,6 +181,7 @@ async def upload_invoice(tenant_id: str, file: UploadFile = File(...)) -> dict[s
         for inv in invs:
             c = evaluate_invoice(inv)
             _CASES[c.case_id] = c
+            publish_case_evaluated(c)
             cases.append(c.model_dump())
         return {"tenant_id": tenant_id, "cases": cases}
     except QuarantineError as qerr:

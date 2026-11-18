@@ -181,3 +181,37 @@ def test_audit_verify_endpoint() -> None:
     assert ok["valid"] is True and ok["events_checked"] > 0
     assert client.get("/api/tenants/CLIENT_B/audit/verify?simulate_tamper=true").json()["valid"] is False
     assert client.get("/api/tenants/CLIENT_B/audit/verify").json()["valid"] is True
+
+
+def test_pubsub_publish_is_off_by_default_and_sends_no_pii(monkeypatch) -> None:
+    import base64
+    import json
+
+    from app.config import settings
+    from app.infra import pubsub
+
+    client = TestClient(app)
+    case = client.post("/api/tenants/CLIENT_B/load-demo?case_type=interco").json()["cases"][0]
+    from app.main import _CASES
+
+    c = _CASES[case["case_id"]]
+    assert pubsub.publish_case_evaluated(c) is False  # PUBSUB_TOPIC empty -> disabled
+
+    sent = {}
+
+    class FakeResp:
+        def raise_for_status(self) -> None:
+            return None
+
+    class FakeSession:
+        def post(self, url, json, timeout):  # noqa: A002
+            sent["url"], sent["body"] = url, json
+            return FakeResp()
+
+    monkeypatch.setattr(settings, "pubsub_topic", "auditbridge-case-evaluated")
+    monkeypatch.setattr(pubsub, "_get_session", lambda: FakeSession())
+    assert pubsub.publish_case_evaluated(c) is True
+    msg = json.loads(base64.b64decode(sent["body"]["messages"][0]["data"]))
+    assert sent["url"].endswith("/topics/auditbridge-case-evaluated:publish")
+    assert msg["status"] == "ANOMALIE" and sorted(msg["expert_roles"]) == ["AVOCAT", "CONSULTANT"]
+    assert set(msg) == {"case_id", "tenant_id", "status", "expert_roles", "confidence_score"}

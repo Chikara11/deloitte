@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     bq_ledger_table: str = "ledger_2025"
     bq_audit_table: str = "audit_logs"
     firestore_collection: str = "deal_chunks"
+    pubsub_topic: str = ""  # e.g. auditbridge-case-evaluated (empty = Workflows orchestration disabled)
 
     gemini_fast_model: str = "gemini-2.5-flash"
     gemini_pro_model: str = "gemini-2.5-pro"
