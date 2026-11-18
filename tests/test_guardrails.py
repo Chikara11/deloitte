@@ -75,3 +75,26 @@ def test_auditbridge_3_demo_cases_and_confidence_formula(tmp_path: Path) -> None
     iso = client.post("/api/tenants/CLIENT_B/test-isolation")
     assert iso.status_code == 200
     assert iso.json()["cases"][0]["status"] == "QUARANTINE"
+
+
+def test_custom_upload_clean_and_poisoned_pdf(tmp_path: Path) -> None:
+    files = {p.name: p for p in generate_demo_files(tmp_path)}
+    client = TestClient(app)
+
+    # Clean PDF upload succeeds (200)
+    with files["CLIENT_B_facture_0412.pdf"].open("rb") as f:
+        ok_resp = client.post(
+            "/api/tenants/CLIENT_B/upload",
+            files={"file": ("CLIENT_B_facture_0412.pdf", f, "application/pdf")},
+        )
+    assert ok_resp.status_code == 200
+    assert ok_resp.json()["cases"][0]["invoice"]["invoice_id"] == "F-2026-0412"
+
+    # Poisoned PDF upload blocked at Gate 1 (403)
+    with files["CLIENT_B_facture_piegee_0999.pdf"].open("rb") as f:
+        blk_resp = client.post(
+            "/api/tenants/CLIENT_B/upload",
+            files={"file": ("CLIENT_B_facture_piegee_0999.pdf", f, "application/pdf")},
+        )
+    assert blk_resp.status_code == 403
+    assert blk_resp.json()["detail"]["event_type"] == "MODEL_ARMOR_BLOCK"

@@ -33,6 +33,12 @@
   <main class="max-w-7xl mx-auto p-5 grid grid-cols-1 lg:grid-cols-12 gap-5">
     <!-- Centre: Factures + Onglets par Rôle + Fiche de Contrôle -->
     <section class="lg:col-span-7 space-y-4">
+      <!-- Barre Upload Custom (Gate 1 live) + Liste des factures -->
+      <div class="rounded-xl bg-slate-900/70 border border-dashed border-slate-700 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <span class="text-slate-300 font-medium">📥 Importer une facture PDF ou CSV (test Gate 1 en direct) :</span>
+        <input id="file-input" type="file" accept=".pdf,.csv" onchange="uploadCustomFile()" class="text-slate-300 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700" />
+      </div>
+
       <!-- Liste des factures -->
       <div class="rounded-xl bg-slate-900 border border-slate-800 p-4 space-y-2.5">
         <div class="flex items-center justify-between">
@@ -138,6 +144,27 @@
 
     async function runIamProbe() {
       await fetch(`/api/security/iam-probe?tenant_id=${currentTenant}`, { method: "POST" });
+    }
+
+    async function uploadCustomFile() {
+      const input = document.getElementById("file-input");
+      if (!input.files.length) return;
+      const file = input.files[0];
+      document.getElementById("status-banner").textContent = `⏳ Gate 1 scan : ${file.name}...`;
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`/api/tenants/${currentTenant}/upload`, { method: "POST", body: fd });
+      if (res.status === 403) {
+        const err = await res.json();
+        document.getElementById("status-banner").textContent = `🛡️ BLOQUÉ GATE 1 (${err.detail.event_type})`;
+        document.getElementById("fiche-preview").textContent = `# QUARANTAINE GATE 1 — ${file.name}\n\n- **Raison :** ${err.detail.reason}`;
+        return;
+      }
+      const data = await res.json();
+      cases = [...data.cases, ...cases];
+      selectedCaseId = data.cases[0]?.case_id || selectedCaseId;
+      document.getElementById("status-banner").textContent = `✅ ${file.name} analysé`;
+      renderAll();
     }
 
     function setTab(tab) {
