@@ -9,120 +9,137 @@
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
+      --bg: #ffffff;
+      --surface: #f8f9fa;
       --black: #000000;
-      --white: #FFFFFF;
-      --green: #86BC25;
-      --green-dark: #26890D;
-      --grey-dark: #53565A;
-      --grey-mid: #97999B;
-      --border: #D0D0CE;
-      --bg-soft: #F7F7F7;
-      --amber: #ED8B00;
-      --red: #DA291C;
+      --green: #86bc25;
+      --green-hover: #26890d;
+      --green-soft: rgba(134, 188, 37, 0.16);
+      --text: #222222;
+      --muted: #53565a;
+      --subtle: #97999b;
+      --border: #d0d0ce;
+      --amber: #ed8b00;
+      --red: #da291c;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: "Open Sans", Arial, sans-serif;
-      background: var(--white);
-      color: var(--black);
-      font-size: 13px;
-      line-height: 1.5;
+      background: var(--bg);
+      color: var(--text);
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      font-size: 13px;
     }
     header {
       background: var(--black);
-      color: var(--white);
-      height: 56px;
-      padding: 0 24px;
+      color: #ffffff;
+      padding: 12px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       border-bottom: 2px solid var(--green);
+      gap: 16px;
+      flex-wrap: wrap;
     }
     .brand { display: flex; align-items: center; gap: 12px; }
-    .wordmark { font-size: 18px; font-weight: 700; letter-spacing: -0.2px; display: flex; align-items: center; gap: 6px; }
+    .wordmark { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; display: flex; align-items: center; gap: 6px; }
     .green-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; }
-    .subtitle { font-size: 12px; color: var(--grey-mid); border-left: 1px solid #333; padding-left: 12px; }
-    .header-controls { display: flex; align-items: center; gap: 12px; }
-    select, input, textarea {
-      font-family: inherit;
-      font-size: 12px;
-      border: 1px solid var(--border);
+    .subtitle { font-size: 11px; color: #cccccc; border-left: 1px solid #444; padding-left: 12px; }
+    .header-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .header-controls label { font-size: 11px; color: #bbb; }
+    .header-controls select {
+      background: #1a1a1a;
+      color: #fff;
+      border: 1px solid #444;
       border-radius: 4px;
       padding: 6px 10px;
-      background: var(--white);
-      color: var(--black);
-    }
-    header select { background: #1A1A1A; color: var(--white); border-color: #444; }
-    .btn {
       font-family: inherit;
       font-size: 12px;
-      font-weight: 600;
-      border-radius: 4px;
-      padding: 7px 14px;
-      border: 1px solid var(--border);
-      background: var(--white);
-      color: var(--black);
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
     }
-    .btn:hover { background: var(--bg-soft); }
-    .btn-primary { background: var(--green); border-color: var(--green); color: var(--white); }
-    .btn-primary:hover { background: var(--green-dark); border-color: var(--green-dark); }
-    .btn-danger { background: var(--red); border-color: var(--red); color: var(--white); }
-    .btn-sm { padding: 4px 10px; font-size: 11px; }
-
-    .workspace {
-      flex: 1;
+    .user-pill {
+      font-size: 11px;
+      color: #ddd;
+      background: #1f1f1f;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 5px 10px;
+    }
+    .layout {
       display: grid;
-      grid-template-columns: 200px 1fr 310px;
+      grid-template-columns: 205px 1fr 330px;
+      flex: 1;
       min-height: 0;
     }
-    nav.left-nav {
+    nav {
       border-right: 1px solid var(--border);
-      padding: 16px 0;
-      background: var(--white);
-    }
-    .nav-item {
+      background: var(--surface);
+      padding: 14px 10px;
       display: flex;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-      text-align: left;
-      padding: 10px 20px;
-      border: none;
-      border-left: 3px solid transparent;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .nav-btn {
       background: transparent;
-      color: var(--grey-dark);
+      border: 1px solid transparent;
+      border-radius: 4px;
+      padding: 9px 12px;
+      text-align: left;
       font-family: inherit;
       font-size: 13px;
       font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+    .nav-btn:hover { background: #eef1ee; color: var(--text); }
+    .nav-btn.active {
+      background: #ffffff;
+      color: var(--black);
+      border-color: var(--border);
+      border-left: 3px solid var(--green);
+    }
+    .nav-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
+    main { padding: 20px 24px; overflow-y: auto; padding-bottom: 64px; }
+    aside {
+      border-left: 1px solid var(--border);
+      background: var(--surface);
+      padding: 16px;
+      overflow-y: auto;
+      padding-bottom: 64px;
+    }
+    h2 { margin: 0 0 12px; font-size: 17px; font-weight: 700; color: var(--black); }
+    h3 { margin: 14px 0 8px; font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+    }
+    .row-between { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .btn {
+      background: var(--green);
+      color: #ffffff;
+      border: 1px solid var(--green);
+      border-radius: 4px;
+      padding: 7px 13px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
       cursor: pointer;
     }
-    .nav-item:hover { background: var(--bg-soft); color: var(--black); }
-    .nav-item.active { border-left-color: var(--green); color: var(--black); background: #F4F9EB; }
-
-    main.content {
-      padding: 24px 28px;
-      overflow-y: auto;
-      background: var(--white);
-    }
-    aside.trust-panel {
-      border-left: 1px solid var(--border);
-      background: var(--bg-soft);
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      overflow-y: auto;
-    }
-    .panel-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--grey-dark); margin: 0 0 8px 0; }
-    .card { border: 1px solid var(--border); border-radius: 4px; background: var(--white); padding: 16px; margin-bottom: 16px; }
+    .btn:hover { background: var(--green-hover); border-color: var(--green-hover); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-outline { background: #fff; color: var(--text); border: 1px solid var(--border); }
+    .btn-outline:hover { background: #f2f2f2; }
+    .btn-danger { background: var(--red); border-color: var(--red); color: #fff; }
+    .btn-danger:hover { background: #b51f14; }
+    .btn-amber { background: var(--amber); border-color: var(--amber); color: #fff; }
     .badge {
       display: inline-block;
       padding: 2px 8px;
@@ -131,259 +148,336 @@
       font-weight: 700;
       border: 1px solid transparent;
     }
-    .badge-green { color: var(--green-dark); background: #EEF6E6; border-color: var(--green); }
-    .badge-amber { color: #9A5800; background: #FFF4E5; border-color: var(--amber); }
-    .badge-red { color: var(--red); background: #FDECEA; border-color: var(--red); }
-    .badge-grey { color: var(--grey-dark); background: var(--bg-soft); border-color: var(--border); }
-
+    .badge-green { background: rgba(38, 137, 13, 0.12); color: var(--green-hover); border-color: rgba(38, 137, 13, 0.3); }
+    .badge-amber { background: rgba(237, 139, 0, 0.12); color: #b56800; border-color: rgba(237, 139, 0, 0.35); }
+    .badge-red { background: rgba(218, 41, 28, 0.12); color: var(--red); border-color: rgba(218, 41, 28, 0.3); }
+    .badge-gray { background: #f0f0ef; color: var(--muted); border-color: var(--border); }
     table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
-    th { font-weight: 700; color: var(--grey-dark); background: var(--bg-soft); font-size: 11px; text-transform: uppercase; }
-    tr.selectable { cursor: pointer; }
-    tr.selectable:hover { background: #F9FBF5; }
-    tr.selected { background: #F1F7E6; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+    th { font-weight: 700; color: var(--muted); background: var(--surface); font-size: 11px; text-transform: uppercase; }
+    tr.clickable { cursor: pointer; }
+    tr.clickable:hover { background: #f5f9ee; }
+    tr.selected { background: var(--green-soft); }
+
+    /* Stepper */
+    .stepper { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin: 10px 0 14px; }
+    .step-pill {
+      font-size: 10px;
+      padding: 3px 7px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--subtle);
+      font-weight: 600;
+    }
+    .step-pill.done { background: rgba(134, 188, 37, 0.16); color: var(--green-hover); border-color: var(--green); }
+    .step-pill.current { background: var(--black); color: #fff; border-color: var(--black); }
+    .step-pill.blocked { background: rgba(218, 41, 28, 0.14); color: var(--red); border-color: var(--red); }
 
     /* Evidence Viewer */
-    .evidence-split { display: grid; grid-template-columns: 340px 1fr; gap: 16px; min-height: 460px; }
-    .evidence-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .ev-item {
+    .split-view { display: grid; grid-template-columns: 320px 1fr; gap: 14px; min-height: 460px; }
+    .evidence-list { border: 1px solid var(--border); border-radius: 4px; overflow-y: auto; max-height: 540px; }
+    .ev-group-title { padding: 7px 10px; background: var(--surface); font-size: 11px; font-weight: 700; color: var(--muted); border-bottom: 1px solid var(--border); }
+    .ev-item { padding: 9px 10px; border-bottom: 1px solid var(--border); cursor: pointer; }
+    .ev-item:hover { background: #f6f9f0; }
+    .ev-item.active { background: var(--green-soft); border-left: 3px solid var(--green); }
+    .source-viewer { border: 1px solid var(--border); border-radius: 4px; background: #fff; overflow: auto; max-height: 540px; }
+    .source-header { padding: 8px 12px; background: var(--surface); border-bottom: 1px solid var(--border); font-weight: 700; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .code-line { display: flex; font-family: ui-monospace, Menlo, monospace; font-size: 12px; line-height: 1.55; padding: 1px 10px; }
+    .line-num { width: 40px; color: var(--subtle); user-select: none; flex-shrink: 0; }
+    .code-line.hl { background: var(--green-soft); border-left: 4px solid var(--red); padding-left: 6px; font-weight: 600; }
+    td.hl-cell { background: var(--green-soft); border-left: 3px solid var(--red); font-weight: 700; }
+    .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    /* Trust panel & logs */
+    .metric-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #ececea; font-size: 12px; }
+    .quarantine-box { border: 1px solid var(--red); background: rgba(218, 41, 28, 0.06); border-radius: 4px; padding: 10px; margin-bottom: 10px; }
+    .log-stream { max-height: 280px; overflow-y: auto; font-family: ui-monospace, Menlo, monospace; font-size: 11px; background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 8px; }
+    .log-entry { padding: 4px 0; border-bottom: 1px dashed #eee; }
+
+    textarea, input[type="text"], select.field {
+      width: 100%;
+      padding: 7px 9px;
       border: 1px solid var(--border);
       border-radius: 4px;
-      padding: 10px 12px;
-      margin-bottom: 8px;
-      cursor: pointer;
-      background: var(--white);
-    }
-    .ev-item:hover, .ev-item.active { border-color: var(--green); background: #F4F9EB; }
-    .file-viewer {
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      background: var(--white);
-      overflow: auto;
-      max-height: 500px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: inherit;
       font-size: 12px;
     }
-    .code-line { display: flex; padding: 2px 10px; border-left: 3px solid transparent; }
-    .line-num { width: 38px; color: var(--grey-mid); user-select: none; flex-shrink: 0; }
-    .line-highlight {
-      background: rgba(134, 188, 37, 0.22);
-      border-left: 3px solid var(--red);
-      font-weight: 600;
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .filter-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 10px; }
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none;
+      align-items: center; justify-content: center; z-index: 50;
     }
-    .cell-highlight {
-      background: rgba(134, 188, 37, 0.25) !important;
-      border-left: 3px solid var(--red) !important;
-      font-weight: 700;
+    .modal-backdrop.open { display: flex; }
+    .modal-box {
+      background: #fff; border: 1px solid var(--border); border-radius: 4px;
+      width: 720px; max-width: 94vw; max-height: 85vh; overflow-y: auto; padding: 18px;
     }
-
-    /* Trust panel metrics */
-    .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .metric-box { background: var(--white); border: 1px solid var(--border); border-radius: 4px; padding: 8px 10px; }
-    .metric-val { font-size: 16px; font-weight: 700; color: var(--black); }
-    .metric-lbl { font-size: 10px; color: var(--grey-dark); text-transform: uppercase; }
-    .quarantine-box { border: 1px solid var(--red); background: #FDECEA; border-radius: 4px; padding: 10px; }
-    .log-stream { flex: 1; overflow-y: auto; max-height: 280px; display: flex; flex-direction: column; gap: 6px; }
-    .log-entry { background: var(--white); border: 1px solid var(--border); border-radius: 4px; padding: 6px 8px; font-size: 11px; }
-    .log-entry.block { border-left: 3px solid var(--red); }
-
+    pre.json-pre { background: #f8f9fa; border: 1px solid var(--border); padding: 10px; border-radius: 4px; font-size: 11px; overflow: auto; }
     footer {
-      background: var(--bg-soft);
-      border-top: 1px solid var(--border);
-      padding: 8px 24px;
-      text-align: center;
-      font-size: 11px;
-      color: var(--grey-dark);
-      font-weight: 600;
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--black); color: #d0d0ce; text-align: center;
+      padding: 7px 16px; font-size: 11px; border-top: 1px solid #333; z-index: 30;
     }
   </style>
 </head>
 <body>
   <header>
     <div class="brand">
-      <div class="wordmark">AuditBridge<span class="green-dot"></span></div>
-      <div class="subtitle">Hackathon Deloitte × Google Cloud — Prototype</div>
+      <div class="wordmark">AuditBridge <span class="green-dot"></span></div>
+      <div class="subtitle">Hackathon Deloitte × Google Cloud — 5-Gate HITL &amp; Audit Chain</div>
     </div>
     <div class="header-controls">
-      <label style="font-size:11px;color:#97999B;">Client</label>
-      <select id="client-select" onchange="onFilterChange()">
-        <option value="ALL">Tous les clients</option>
-        <option value="CLIENT_A">CLIENT_A — Alpha Distribution (PCG)</option>
-        <option value="CLIENT_B">CLIENT_B — Nova Group Europe (IFRS)</option>
+      <label for="clientSelect">Client :</label>
+      <select id="clientSelect">
+        <option value="">Tous les clients</option>
+        <option value="CLIENT_A">CLIENT_A (Retail)</option>
+        <option value="CLIENT_B">CLIENT_B (Nova Group)</option>
       </select>
-      <label style="font-size:11px;color:#97999B;">Rôle</label>
-      <select id="role-select" onchange="onRoleSelect()">
-        <option value="AUDITEUR">Auditeur Financier</option>
-        <option value="AVOCAT">Avocat Tax &amp; Legal</option>
-        <option value="CONSULTANT">Consultant</option>
+      <label for="roleSelect">Rôle actif :</label>
+      <select id="roleSelect">
+        <option value="Auditeur">Auditeur</option>
+        <option value="Manager">Manager</option>
+        <option value="Avocat">Avocat</option>
+        <option value="Consultant">Consultant</option>
+        <option value="Analyste sécurité">Analyste sécurité</option>
       </select>
-      <button class="btn btn-sm" onclick="reseedDemo()">Réinitialiser Démo</button>
+      <span class="user-pill" id="activeUserPill">auditeur.senior@deloitte.fr</span>
+      <button class="btn btn-outline" id="reseedBtn" style="padding:5px 10px;">Réinitialiser démo</button>
     </div>
   </header>
 
-  <div class="workspace">
-    <nav class="left-nav">
-      <button class="nav-item active" id="nav-dossiers" onclick="setTab('dossiers')">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+  <div class="layout">
+    <nav>
+      <button class="nav-btn active" data-tab="dossiers">
+        <svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v10H3z"/></svg>
         Dossiers
       </button>
-      <button class="nav-item" id="nav-analyse" onclick="setTab('analyse')">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        Analyse
+      <button class="nav-btn" data-tab="analyse">
+        <svg viewBox="0 0 24 24"><path d="M4 19h16M7 15V9m5 6V5m5 10v-3"/></svg>
+        Analyse &amp; Gates 1-3
       </button>
-      <button class="nav-item" id="nav-preuves" onclick="setTab('preuves')">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <button class="nav-btn" data-tab="preuves">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
         Preuves
       </button>
-      <button class="nav-item" id="nav-experts" onclick="setTab('experts')">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-        Experts
+      <button class="nav-btn" data-tab="experts">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        Experts (Gate 4)
       </button>
-      <button class="nav-item" id="nav-validation" onclick="setTab('validation')">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-        Validation
+      <button class="nav-btn" data-tab="validation">
+        <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+        Validation (Gate 5)
       </button>
-      <button class="nav-item" id="nav-fiche" onclick="setTab('fiche')">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="13" y2="16"/></svg>
+      <button class="nav-btn" data-tab="fiche">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         Fiche de contrôle
       </button>
-      <button class="nav-item" id="nav-journal" onclick="setTab('journal')">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <button class="nav-btn" data-tab="journal">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
         Journal
       </button>
     </nav>
 
-    <main class="content" id="main-content"></main>
+    <main>
+      <!-- TAB 1: DOSSIERS -->
+      <section id="tab-dossiers" class="tab-panel">
+        <div class="row-between" style="margin-bottom:12px;">
+          <h2 style="margin:0;">Dossiers d'audit</h2>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="file" id="uploadInput" style="font-size:12px;" />
+            <button class="btn" id="uploadBtn">Importer une pièce</button>
+          </div>
+        </div>
+        <div class="card" style="padding:0;">
+          <table>
+            <thead>
+              <tr>
+                <th>Dossier</th>
+                <th>Client</th>
+                <th>Fournisseur</th>
+                <th>Montant HT</th>
+                <th>Statut HITL</th>
+                <th>Score</th>
+                <th>Intégrité</th>
+              </tr>
+            </thead>
+            <tbody id="casesTableBody"></tbody>
+          </table>
+        </div>
+      </section>
 
-    <aside class="trust-panel">
-      <div>
-        <h3 class="panel-title">Trust &amp; Governance</h3>
-        <div class="metric-grid">
-          <div class="metric-box"><div class="metric-val" id="m-tenant">Vérifié</div><div class="metric-lbl">Isolation Tenant</div></div>
-          <div class="metric-box"><div class="metric-val" id="m-pii">0</div><div class="metric-lbl">PII Masquées</div></div>
-          <div class="metric-box"><div class="metric-val" id="m-armor" style="color:var(--red);">0</div><div class="metric-lbl">Blocs Model Armor</div></div>
-          <div class="metric-box"><div class="metric-val" id="m-skeptic">0</div><div class="metric-lbl">Rejets Skeptic</div></div>
+      <!-- TAB 2: ANALYSE & GATES 1-3 -->
+      <section id="tab-analyse" class="tab-panel" style="display:none;">
+        <div class="row-between" style="margin-bottom:8px;">
+          <h2 id="analyseTitle" style="margin:0;">Analyse &amp; Contrôle HITL</h2>
+          <span id="chainBadgeAnalyse" class="badge badge-green">Journal intègre ✓</span>
+        </div>
+        <div id="caseStepper" class="stepper"></div>
+        <div id="analyseBody"></div>
+      </section>
+
+      <!-- TAB 3: PREUVES -->
+      <section id="tab-preuves" class="tab-panel" style="display:none;">
+        <div class="row-between" style="margin-bottom:12px;">
+          <h2 style="margin:0;">Visualiseur de preuves tracées</h2>
+          <button class="btn btn-outline" id="toggleCompareBtn">Mode Comparer</button>
+        </div>
+        <div id="preuvesContainer"></div>
+      </section>
+
+      <!-- TAB 4: EXPERTS (GATE 4) -->
+      <section id="tab-experts" class="tab-panel" style="display:none;">
+        <h2>Gate 4 — Consultation des Experts</h2>
+        <div id="expertsBody"></div>
+      </section>
+
+      <!-- TAB 5: VALIDATION (GATE 5) -->
+      <section id="tab-validation" class="tab-panel" style="display:none;">
+        <div class="row-between" style="margin-bottom:12px;">
+          <h2 style="margin:0;">Gate 5 — Validation Finale</h2>
+          <button class="btn" id="bulkGate5Btn">Valider dossiers verts en masse (Gate 5)</button>
+        </div>
+        <div id="validationBody"></div>
+      </section>
+
+      <!-- TAB 6: FICHE DE CONTROLE -->
+      <section id="tab-fiche" class="tab-panel" style="display:none;">
+        <div class="row-between" style="margin-bottom:12px;">
+          <h2 style="margin:0;">Fiche de contrôle interne</h2>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline" id="exportMdBtn">Exporter .md</button>
+            <button class="btn" id="exportDocxBtn">Exporter .docx</button>
+          </div>
+        </div>
+        <div class="card" id="ficheContent" style="white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-size:12px;"></div>
+      </section>
+
+      <!-- TAB 7: JOURNAL -->
+      <section id="tab-journal" class="tab-panel" style="display:none;">
+        <div class="row-between" style="margin-bottom:10px;">
+          <h2 style="margin:0;">Journal d'audit immuable (SHA-256 Chain)</h2>
+          <button class="btn btn-outline" id="exportCsvBtn">Exporter CSV</button>
+        </div>
+        <div class="filter-bar">
+          <input type="text" id="fCase" placeholder="Filtrer dossier..." />
+          <input type="text" id="fActor" placeholder="Filtrer acteur..." />
+          <input type="text" id="fRole" placeholder="Filtrer rôle..." />
+          <select id="fGate" class="field">
+            <option value="">Toutes gates</option>
+            <option value="GATE_1">GATE_1</option>
+            <option value="GATE_2">GATE_2</option>
+            <option value="GATE_3">GATE_3</option>
+            <option value="GATE_4">GATE_4</option>
+            <option value="GATE_5">GATE_5</option>
+            <option value="EXPORT">EXPORT</option>
+          </select>
+          <input type="text" id="fAction" placeholder="Filtrer action..." />
+        </div>
+        <div class="card" style="padding:0;">
+          <table>
+            <thead>
+              <tr>
+                <th>Horodatage UTC</th>
+                <th>Gate</th>
+                <th>Acteur (Rôle)</th>
+                <th>Action / Décision</th>
+                <th>Dossier</th>
+                <th>Hash SHA-256</th>
+              </tr>
+            </thead>
+            <tbody id="journalBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- RIGHT TRUST & GOVERNANCE PANEL -->
+    <aside>
+      <h2 style="font-size:15px;">Trust &amp; Governance</h2>
+      <div class="card" style="padding:10px 12px;">
+        <div class="metric-row"><span>Stockage</span><strong id="mStorage">memory</strong></div>
+        <div class="metric-row"><span>Isolation tenant</span><span class="badge badge-green" id="mTenant">Vérifiée</span></div>
+        <div class="metric-row"><span>PII masquées (DLP)</span><strong id="mPii">0</strong></div>
+        <div class="metric-row"><span>Blocs Model Armor</span><strong id="mArmor">0</strong></div>
+        <div class="metric-row"><span>Rejets Skeptic</span><strong id="mSkeptic">0</strong></div>
+        <div class="metric-row" style="border-bottom:none;"><span>Étape harness</span><strong id="mStep">IDLE</strong></div>
+      </div>
+
+      <h3>Quarantaine (Gate 1)</h3>
+      <div id="quarantineList"></div>
+
+      <h3>Flux temps réel (SSE)</h3>
+      <div class="log-stream" id="liveLogStream"></div>
+    </aside>
+  </div>
+
+  <!-- Diff Modal -->
+  <div class="modal-backdrop" id="diffModal">
+    <div class="modal-box">
+      <div class="row-between" style="margin-bottom:10px;">
+        <h3 style="margin:0;" id="diffTitle">Détail de l'événement</h3>
+        <button class="btn btn-outline" onclick="closeDiffModal()">Fermer</button>
+      </div>
+      <div id="diffMeta" style="font-size:12px;margin-bottom:10px;"></div>
+      <div class="grid-2">
+        <div>
+          <strong>Avant (before)</strong>
+          <pre class="json-pre" id="diffBefore"></pre>
+        </div>
+        <div>
+          <strong>Après (after)</strong>
+          <pre class="json-pre" id="diffAfter"></pre>
         </div>
       </div>
-
-      <div class="card" style="margin-bottom:0;padding:10px;">
-        <div class="metric-lbl">Étape Harness ADK</div>
-        <div id="m-step" style="font-weight:700;font-size:12px;color:var(--green-dark);margin-top:2px;">IDLE</div>
-      </div>
-
-      <div id="quarantine-container"></div>
-
-      <div style="flex:1;display:flex;flex-direction:column;min-height:0;">
-        <h3 class="panel-title">Flux d'audit en direct</h3>
-        <div id="log-stream" class="log-stream"></div>
-      </div>
-    </aside>
+    </div>
   </div>
 
   <footer>Brouillon généré par IA — validation humaine requise — données fictives</footer>
 
   <script>
-    let allCases = [];
-    let selectedCaseId = null;
-    let activeTab = "dossiers";
-    let trustLogs = [];
-    let selectedEvidence = null;
-    let compareMode = false;
-    let expertTabRole = "AVOCAT";
+    const ROLE_USERS = {
+      "Auditeur": "auditeur.senior@deloitte.fr",
+      "Manager": "manager.audit@deloitte.fr",
+      "Avocat": "me.martin@deloitte-avocats.fr",
+      "Consultant": "consultant.ops@deloitte.fr",
+      "Analyste sécurité": "soc.analyst@deloitte.fr",
+    };
 
-    async function init() {
-      await refreshData();
-      const sse = new EventSource("/api/logs/stream");
-      sse.addEventListener("log", (e) => {
-        const evt = JSON.parse(e.data);
-        trustLogs.unshift(evt);
-        renderTrustPanel();
-      });
-    }
+    const STEPPER_ORDER = [
+      "RECEIVED",
+      "SECURITY_CHECKED",
+      "AUDITOR_AGENT_DONE",
+      "GATE2_APPROVED",
+      "BRIEFS_DRAFTED",
+      "GATE3_APPROVED",
+      "EXPERTS_ANSWERED",
+      "SYNTHESIS_DONE",
+      "GATE5_APPROVED",
+      "DOCUMENTED",
+    ];
 
-    async function refreshData() {
-      const [cRes, tRes] = await Promise.all([fetch("/api/cases"), fetch("/api/trust")]);
-      allCases = await cRes.json();
-      const tData = await tRes.json();
-      trustLogs = (tData.logs || []).slice().reverse();
-      if (!selectedCaseId || !allCases.find(c => c.case_id === selectedCaseId)) {
-        const preferred = allCases.find(c => c.status === "Anomalie") || allCases[0];
-        selectedCaseId = preferred ? preferred.case_id : null;
-      }
-      renderTrustMetrics(tData.metrics);
-      renderTrustPanel();
-      renderMain();
-    }
+    const state = {
+      cases: [],
+      events: [],
+      selectedCaseId: null,
+      selectedEvidenceIdx: 0,
+      compareMode: false,
+      activeRole: "Auditeur",
+      activeUser: ROLE_USERS["Auditeur"],
+      chainMap: {},
+    };
 
-    function renderTrustMetrics(m) {
-      document.getElementById("m-tenant").textContent = m.tenant_verified ? "Vérifié" : "Alerte";
-      document.getElementById("m-pii").textContent = m.pii_masked_count;
-      document.getElementById("m-armor").textContent = m.model_armor_blocks;
-      document.getElementById("m-skeptic").textContent = m.skeptic_rejections;
-      document.getElementById("m-step").textContent = m.current_harness_step;
-    }
-
-    function renderTrustPanel() {
-      const qCases = allCases.filter(c => c.status === "Quarantaine");
-      const qBox = document.getElementById("quarantine-container");
-      qBox.innerHTML = qCases.map(q => `
-        <div class="quarantine-box" style="margin-bottom:8px;">
-          <div style="font-weight:700;color:var(--red);font-size:12px;">Fichier en Quarantaine</div>
-          <div style="font-size:11px;margin:4px 0;">${q.invoice.source_file}</div>
-          <button class="btn btn-danger btn-sm" onclick="examineQuarantine('${q.case_id}')">Examiner</button>
-        </div>
-      `).join("");
-
-      const stream = document.getElementById("log-stream");
-      stream.innerHTML = trustLogs.slice(0, 25).map(l => `
-        <div class="log-entry ${l.verdict === 'BLOCK' || l.verdict === 'REJECT' ? 'block' : ''}">
-          <div style="display:flex;justify-content:space-between;font-weight:700;">
-            <span>${l.action}</span>
-            <span style="color:var(--grey-dark);">${l.agent}</span>
-          </div>
-          <div style="color:var(--grey-dark);font-size:10px;">${l.tenant_id} • ${l.verdict}</div>
-        </div>
-      `).join("");
-    }
-
-    function getFilteredCases() {
-      const f = document.getElementById("client-select").value;
-      return f === "ALL" ? allCases : allCases.filter(c => c.tenant_id === f);
-    }
-
-    function getSelectedCase() {
-      return allCases.find(c => c.case_id === selectedCaseId) || null;
-    }
-
-    function setTab(tab) {
-      activeTab = tab;
-      document.querySelectorAll(".nav-item").forEach(b => b.classList.remove("active"));
-      document.getElementById(`nav-${tab}`).classList.add("active");
-      renderMain();
-    }
-
-    function onFilterChange() {
-      const list = getFilteredCases();
-      if (list.length && !list.find(c => c.case_id === selectedCaseId)) {
-        selectedCaseId = list[0].case_id;
-      }
-      renderMain();
-    }
-
-    function onRoleSelect() {
-      const r = document.getElementById("role-select").value;
-      if (r === "AVOCAT" || r === "CONSULTANT") {
-        expertTabRole = r;
-        setTab("experts");
-      } else {
-        setTab("validation");
-      }
+    function esc(s) {
+      return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
 
     function statusBadge(c) {
-      if (c.status === "Quarantaine" || c.status === "Rejeté") return `<span class="badge badge-red">${c.status}</span>`;
-      if (c.status === "Anomalie") return `<span class="badge badge-amber">${c.status}</span>`;
-      return `<span class="badge badge-green">${c.status}</span>`;
+      if (c.status === "QUARANTINED" || c.status === "REJECTED") return `<span class="badge badge-red">${c.status}</span>`;
+      if (c.status === "DOCUMENTED" || c.score_color === "green") return `<span class="badge badge-green">${c.status}</span>`;
+      if (c.score_color === "amber") return `<span class="badge badge-amber">${c.status}</span>`;
+      return `<span class="badge badge-red">${c.status}</span>`;
     }
 
     function scoreBadge(c) {
@@ -391,370 +485,577 @@
       return `<span class="badge ${cls}">${c.confidence_score}/100</span>`;
     }
 
-    function renderMain() {
-      const el = document.getElementById("main-content");
-      if (activeTab === "dossiers") renderDossiers(el);
-      else if (activeTab === "analyse") renderAnalyse(el);
-      else if (activeTab === "preuves") renderPreuves(el);
-      else if (activeTab === "experts") renderExperts(el);
-      else if (activeTab === "validation") renderValidation(el);
-      else if (activeTab === "fiche") renderFiche(el);
-      else if (activeTab === "journal") renderJournal(el);
+    function currentCase() {
+      return state.cases.find(c => c.case_id === state.selectedCaseId) || state.cases[0] || null;
     }
 
-    function renderDossiers(el) {
-      const list = getFilteredCases();
-      el.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-          <div>
-            <h2 style="margin:0;font-size:18px;">Dossiers de contrôle</h2>
-            <p style="margin:2px 0 0;color:var(--grey-dark);">Sélectionnez une facture pour analyser les règles, preuves et validations.</p>
+    function switchTab(tab) {
+      document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+      document.querySelectorAll(".tab-panel").forEach(p => p.style.display = p.id === `tab-${tab}` ? "block" : "none");
+      renderSelected();
+    }
+
+    document.querySelectorAll(".nav-btn").forEach(btn => btn.addEventListener("click", () => switchTab(btn.dataset.tab)));
+
+    document.getElementById("roleSelect").addEventListener("change", (e) => {
+      state.activeRole = e.target.value;
+      state.activeUser = ROLE_USERS[state.activeRole] || "user@deloitte.fr";
+      document.getElementById("activeUserPill").textContent = state.activeUser;
+      renderSelected();
+    });
+
+    document.getElementById("clientSelect").addEventListener("change", () => loadAll());
+
+    async function api(url, opts = {}) {
+      const res = await fetch(url, opts);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: res.statusText }));
+        throw new Error(err.detail || res.statusText);
+      }
+      return res.json();
+    }
+
+    async function loadAll() {
+      const tenant = document.getElementById("clientSelect").value;
+      const q = tenant ? `?tenant_id=${encodeURIComponent(tenant)}` : "";
+      const [cases, trust, events] = await Promise.all([
+        api(`/api/cases${q}`),
+        api("/api/trust"),
+        api("/api/events"),
+      ]);
+      state.cases = cases;
+      state.events = events;
+      if (!state.selectedCaseId || !cases.find(c => c.case_id === state.selectedCaseId)) {
+        state.selectedCaseId = cases[0]?.case_id || null;
+      }
+      // Verify chains
+      for (const c of cases) {
+        state.chainMap[c.case_id] = await api(`/api/cases/${encodeURIComponent(c.case_id)}/verify-chain`).catch(() => ({ valid: false }));
+      }
+      renderTrust(trust);
+      renderCasesTable();
+      renderSelected();
+      renderJournal();
+    }
+
+    function renderTrust(trust) {
+      const m = trust.metrics || {};
+      document.getElementById("mStorage").textContent = m.storage_backend || "memory";
+      document.getElementById("mPii").textContent = m.pii_masked_count ?? 0;
+      document.getElementById("mArmor").textContent = m.model_armor_blocks ?? 0;
+      document.getElementById("mSkeptic").textContent = m.skeptic_rejections ?? 0;
+      document.getElementById("mStep").textContent = m.current_harness_step ?? "IDLE";
+
+      const qList = document.getElementById("quarantineList");
+      const qCases = state.cases.filter(c => c.status === "QUARANTINED");
+      if (!qCases.length) {
+        qList.innerHTML = `<div class="card" style="font-size:12px;color:var(--muted);">Aucun fichier en quarantaine.</div>`;
+      } else {
+        qList.innerHTML = qCases.map(q => `
+          <div class="quarantine-box">
+            <div style="font-weight:700;color:var(--red);">${esc(q.invoice.source_file)}</div>
+            <div style="font-size:11px;margin:4px 0;">${esc(q.quarantine_reason)}</div>
+            <button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="examineQuarantine('${esc(q.case_id)}')">Examiner (Gate 1)</button>
           </div>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <input type="file" id="upload-file" accept=".txt,.csv" onchange="uploadFile()" />
+        `).join("");
+      }
+    }
+
+    window.examineQuarantine = function(caseId) {
+      state.selectedCaseId = caseId;
+      renderCasesTable();
+      switchTab("analyse");
+    };
+
+    function renderCasesTable() {
+      const tb = document.getElementById("casesTableBody");
+      tb.innerHTML = state.cases.map(c => {
+        const ch = state.chainMap[c.case_id];
+        const chBadge = ch?.valid ? `<span class="badge badge-green">Journal intègre ✓</span>` : `<span class="badge badge-red">Chaîne rompue</span>`;
+        return `
+          <tr class="clickable ${c.case_id === state.selectedCaseId ? "selected" : ""}" onclick="selectCase('${esc(c.case_id)}')">
+            <td><strong>${esc(c.invoice.invoice_id)}</strong></td>
+            <td>${esc(c.tenant_id)}</td>
+            <td>${esc(c.invoice.supplier)}</td>
+            <td>${c.invoice.amount_ht ? c.invoice.amount_ht.toLocaleString("fr-FR") + " €" : "-"}</td>
+            <td>${statusBadge(c)}</td>
+            <td>${scoreBadge(c)}</td>
+            <td>${chBadge}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    window.selectCase = function(caseId) {
+      state.selectedCaseId = caseId;
+      state.selectedEvidenceIdx = 0;
+      renderCasesTable();
+      renderSelected();
+    };
+
+    function renderStepper(c) {
+      if (c.status === "QUARANTINED" || c.status === "REJECTED") {
+        document.getElementById("caseStepper").innerHTML = `<span class="step-pill blocked">${c.status}</span>`;
+        return;
+      }
+      const curIdx = STEPPER_ORDER.indexOf(c.status);
+      document.getElementById("caseStepper").innerHTML = STEPPER_ORDER.map((s, idx) => {
+        const cls = idx < curIdx ? "done" : (idx === curIdx ? "current" : "");
+        return `<span class="step-pill ${cls}">${s}</span>`;
+      }).join("");
+    }
+
+    function renderSelected() {
+      const c = currentCase();
+      if (!c) return;
+      renderStepper(c);
+      const ch = state.chainMap[c.case_id];
+      const badgeEl = document.getElementById("chainBadgeAnalyse");
+      badgeEl.className = `badge ${ch?.valid ? "badge-green" : "badge-red"}`;
+      badgeEl.textContent = ch?.valid ? "Journal intègre ✓" : "Chaîne rompue !";
+
+      renderAnalyse(c);
+      renderPreuves(c);
+      renderExperts(c);
+      renderValidation(c);
+      renderFiche(c);
+    }
+
+    function renderAnalyse(c) {
+      document.getElementById("analyseTitle").textContent = `Dossier ${c.invoice.invoice_id} (${c.tenant_id})`;
+      const el = document.getElementById("analyseBody");
+
+      if (c.status === "QUARANTINED") {
+        el.innerHTML = `
+          <div class="quarantine-box">
+            <strong>Quarantaine Gate 1 :</strong> ${esc(c.quarantine_reason)}
+            <pre class="json-pre" style="margin-top:8px;">${esc(c.quarantine_raw_text)}</pre>
+            <div style="margin-top:10px;">
+              <label>Commentaire obligatoire (Analyste sécurité) :</label>
+              <input type="text" id="g1Comment" placeholder="Justification Release ou Confirm block..." />
+              <div style="display:flex;gap:8px;margin-top:8px;">
+                <button class="btn" onclick="submitGate1('${esc(c.case_id)}', 'Release')">Release (Autoriser)</button>
+                <button class="btn btn-danger" onclick="submitGate1('${esc(c.case_id)}', 'Confirm block')">Confirm block (Rejeter)</button>
+              </div>
+            </div>
+          </div>`;
+        return;
+      }
+
+      const rulesHtml = c.findings.map((f, idx) => `
+        <tr>
+          <td><strong>${esc(f.label)}</strong><div style="font-size:11px;color:var(--subtle);">${esc(f.rule_id)}</div></td>
+          <td><span class="badge ${f.passed ? "badge-green" : "badge-red"}">${f.passed ? "CONFORME" : "ANOMALIE"}</span></td>
+          <td>${esc(f.summary)}</td>
+          <td><button class="btn btn-outline" style="padding:3px 8px;font-size:11px;" onclick="toggleRuleOverride('${esc(c.case_id)}', '${esc(f.rule_id)}', ${!f.passed})">Surcharger</button></td>
+        </tr>
+      `).join("");
+
+      const gate2Box = c.status === "AUDITOR_AGENT_DONE" ? `
+        <div class="card" style="border-left:4px solid var(--green);">
+          <div class="row-between">
+            <strong>Gate 2 — Validation AuditorAgent (Rôle requis : Auditeur)</strong>
+            ${c.score_color === "green" ? `<button class="btn" onclick="bulkApprove('${esc(c.tenant_id)}', 'GATE_2')">Bulk Approve Vert (Gate 2)</button>` : ""}
+          </div>
+          <div style="margin:8px 0;font-size:12px;">
+            <strong>Fichiers dans le périmètre :</strong>
+            <input type="text" id="g2Scope" value="${esc((c.scope_files || []).join(", "))}" />
+          </div>
+          <input type="text" id="g2Comment" placeholder="Commentaire (obligatoire pour Edit ou Reject)..." />
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn" onclick="submitGate2('${esc(c.case_id)}', 'Approve')">Approve</button>
+            <button class="btn btn-amber" onclick="submitGate2('${esc(c.case_id)}', 'Edit')">Edit périmètre</button>
+            <button class="btn btn-danger" onclick="submitGate2('${esc(c.case_id)}', 'Reject')">Reject (Re-run AuditorAgent)</button>
+          </div>
+        </div>` : "";
+
+      const gate3Box = c.status === "BRIEFS_DRAFTED" ? `
+        <div class="card" style="border-left:4px solid var(--green);">
+          <strong>Gate 3 — Revue des Micro-Briefs avant envoi aux Experts (Rôle requis : Auditeur)</strong>
+          <div style="font-size:11px;color:var(--muted);margin:4px 0 8px;">Vérification DLP automatique anti-fuite de données personnelles avant publication aux experts.</div>
+          ${c.micro_briefs.map((b, i) => `
+            <div style="margin-bottom:10px;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
+              <strong>${esc(b.role)} — ${esc(b.title)}</strong>
+              <textarea id="briefCtx_${i}" rows="2" style="margin-top:4px;">${esc(b.context_summary)}</textarea>
+              <input type="text" id="briefQ_${i}" value="${esc(b.question)}" style="margin-top:4px;" />
+            </div>
+          `).join("")}
+          <input type="text" id="g3Comment" placeholder="Commentaire (obligatoire pour Edit ou Reject)..." />
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn" onclick="submitGate3('${esc(c.case_id)}', 'Approve')">Approve &amp; Envoyer aux Experts</button>
+            <button class="btn btn-amber" onclick="submitGate3('${esc(c.case_id)}', 'Edit')">Edit &amp; Envoyer</button>
+            <button class="btn btn-danger" onclick="submitGate3('${esc(c.case_id)}', 'Reject')">Reject (Re-run BridgeAgent)</button>
+          </div>
+        </div>` : "";
+
+      el.innerHTML = `
+        <div class="grid-2">
+          <div class="card">
+            <div style="font-size:11px;color:var(--muted);">SYNTHÈSE PIÈCE</div>
+            <div style="font-size:16px;font-weight:700;margin:4px 0;">${esc(c.invoice.supplier)} → ${esc(c.invoice.customer)}</div>
+            <div>Montant HT : <strong>${c.invoice.amount_ht.toLocaleString("fr-FR")} €</strong> | TVA : <strong>${(c.invoice.vat_rate*100).toFixed(0)}%</strong></div>
+            <div>Date prestation : <strong>${esc(c.invoice.service_date)}</strong> | GL Période : <strong>${esc(c.invoice.ledger_entry.period)}</strong></div>
+          </div>
+          <div class="card">
+            <div style="font-size:11px;color:var(--muted);">SCORE DE CONFIANCE</div>
+            <div style="font-size:26px;font-weight:700;margin:4px 0;">${c.confidence_score}/100 ${scoreBadge(c)}</div>
+            <div style="font-size:12px;">${esc(c.auditor_explanation)}</div>
           </div>
         </div>
+        ${gate2Box}
+        ${gate3Box}
         <div class="card" style="padding:0;">
           <table>
-            <thead><tr><th>Facture</th><th>Client</th><th>Fournisseur</th><th>Montant HT</th><th>Statut</th><th>Score</th><th>Dernière action</th></tr></thead>
-            <tbody>
-              ${list.map(c => `
-                <tr class="selectable ${c.case_id === selectedCaseId ? 'selected' : ''}" onclick="selectCase('${c.case_id}')">
-                  <td><strong>${c.invoice.invoice_id}</strong><div style="font-size:11px;color:var(--grey-dark);">${c.invoice.source_file}</div></td>
-                  <td>${c.tenant_id}</td>
-                  <td>${c.invoice.supplier}</td>
-                  <td style="font-family:monospace;">${Number(c.invoice.amount_ht).toLocaleString('fr-FR')} €</td>
-                  <td>${statusBadge(c)}</td>
-                  <td>${scoreBadge(c)}</td>
-                  <td style="color:var(--grey-dark);">${c.last_action}</td>
-                </tr>
-              `).join("")}
-            </tbody>
+            <thead><tr><th>Règle</th><th>Statut</th><th>Résumé</th><th>Action</th></tr></thead>
+            <tbody>${rulesHtml}</tbody>
           </table>
         </div>
       `;
     }
 
-    function renderAnalyse(el) {
-      const c = getSelectedCase();
-      if (!c) { el.innerHTML = "<p>Aucun dossier sélectionné.</p>"; return; }
-      const gaugeColor = c.score_color === "green" ? "var(--green-dark)" : (c.score_color === "amber" ? "var(--amber)" : "var(--red)");
-      el.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-          <div>
-            <h2 style="margin:0;font-size:18px;">Analyse — ${c.invoice.invoice_id} (${c.tenant_id})</h2>
-            <p style="margin:2px 0 0;color:var(--grey-dark);">${c.invoice.supplier} → ${c.invoice.customer} • ${Number(c.invoice.amount_ht).toLocaleString('fr-FR')} € HT</p>
-          </div>
-          <div style="text-align:right;">
-            <div style="font-size:11px;color:var(--grey-dark);text-transform:uppercase;">Score de confiance</div>
-            <div style="font-size:24px;font-weight:700;color:${gaugeColor};">${c.confidence_score}/100</div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="panel-title">Synthèse de l'Agent Auditeur</div>
-          <p style="margin:0 0 8px;">${c.auditor_explanation}</p>
-          <div style="padding:10px;background:var(--bg-soft);border-left:3px solid ${gaugeColor};font-weight:600;">Recommandation : ${c.recommendation}</div>
-        </div>
-        <div class="card" style="padding:0;">
-          <table>
-            <thead><tr><th>Règle</th><th>Statut</th><th>Preuve résumée</th><th>Action</th></tr></thead>
-            <tbody>
-              ${c.findings.map(f => `
-                <tr>
-                  <td><strong>${f.label}</strong><div style="font-size:11px;color:var(--grey-dark);">${f.rule_id}</div></td>
-                  <td>${f.passed ? '<span class="badge badge-green">Conforme</span>' : '<span class="badge badge-red">Anomalie</span>'}</td>
-                  <td>${f.summary}</td>
-                  <td><button class="btn btn-sm" onclick="openFirstEvidence('${f.rule_id}')">Voir preuves (${f.evidences.length})</button></td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-        </div>
-      `;
-    }
+    window.submitGate1 = async function(caseId, decision) {
+      const comment = document.getElementById("g1Comment").value;
+      try {
+        await api(`/api/cases/${encodeURIComponent(caseId)}/gate1`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ decision, actor_id: state.activeUser, actor_role: state.activeRole, comment }),
+        });
+        await loadAll();
+      } catch (e) { alert(e.message); }
+    };
 
-    async function renderPreuves(el) {
-      const c = getSelectedCase();
-      if (!c) { el.innerHTML = "<p>Aucun dossier sélectionné.</p>"; return; }
+    window.submitGate2 = async function(caseId, decision) {
+      const comment = document.getElementById("g2Comment").value;
+      const scope = document.getElementById("g2Scope").value.split(",").map(s => s.trim()).filter(Boolean);
+      try {
+        await api(`/api/cases/${encodeURIComponent(caseId)}/gate2`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ decision, actor_id: state.activeUser, actor_role: state.activeRole, comment, scope_files: scope }),
+        });
+        await loadAll();
+      } catch (e) { alert(e.message); }
+    };
+
+    window.toggleRuleOverride = async function(caseId, ruleId, newPassed) {
+      const justif = prompt(`Justification pour passer la règle ${ruleId} à ${newPassed ? "CONFORME" : "ANOMALIE"} :`);
+      if (!justif) return;
+      try {
+        await api(`/api/cases/${encodeURIComponent(caseId)}/gate2`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            decision: "Edit",
+            actor_id: state.activeUser,
+            actor_role: state.activeRole,
+            comment: justif,
+            rule_overrides: [{ rule_id: ruleId, passed: newPassed, justification: justif }],
+          }),
+        });
+        await loadAll();
+      } catch (e) { alert(e.message); }
+    };
+
+    window.submitGate3 = async function(caseId, decision) {
+      const c = currentCase();
+      const comment = document.getElementById("g3Comment").value;
+      const edited_briefs = c.micro_briefs.map((b, i) => ({
+        ...b,
+        context_summary: document.getElementById(`briefCtx_${i}`).value,
+        question: document.getElementById(`briefQ_${i}`).value,
+      }));
+      try {
+        await api(`/api/cases/${encodeURIComponent(caseId)}/gate3`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ decision, actor_id: state.activeUser, actor_role: state.activeRole, comment, edited_briefs }),
+        });
+        await loadAll();
+      } catch (e) { alert(e.message); }
+    };
+
+    window.bulkApprove = async function(tenantId, gate) {
+      try {
+        const res = await api(`/api/tenants/${encodeURIComponent(tenantId)}/bulk-approve`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ gate, actor_id: state.activeUser, actor_role: state.activeRole }),
+        });
+        alert(`${res.approved_count} dossier(s) vert(s) approuvé(s) (${gate}).`);
+        await loadAll();
+      } catch (e) { alert(e.message); }
+    };
+
+    // PREUVES
+    document.getElementById("toggleCompareBtn").addEventListener("click", () => {
+      state.compareMode = !state.compareMode;
+      renderPreuves(currentCase());
+    });
+
+    async function renderPreuves(c) {
+      const container = document.getElementById("preuvesContainer");
+      if (!c) { container.innerHTML = ""; return; }
       const allEv = [];
-      c.findings.forEach(f => f.evidences.forEach((ev, idx) => allEv.push({ ...ev, rule_id: f.rule_id, passed: f.passed, id: `${f.rule_id}-${idx}` })));
-      if (!selectedEvidence && allEv.length) selectedEvidence = allEv[0];
-
-      const groups = {
-        input: { title: "Fichier d'entrée", items: allEv.filter(e => e.source_type === "input") },
-        passport: { title: "Passeport client", items: allEv.filter(e => e.source_type === "passport") },
-        regulation: { title: "Réglementation", items: allEv.filter(e => e.source_type === "regulation") },
-      };
-
-      el.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-          <h2 style="margin:0;font-size:18px;">Preuves &amp; Traçabilité — ${c.invoice.invoice_id}</h2>
-          <button class="btn ${compareMode ? 'btn-primary' : ''}" onclick="toggleCompare()">Mode Comparer (Entrée / Règle)</button>
-        </div>
-        ${compareMode ? `<div id="compare-area" class="evidence-compare"></div>` : `
-        <div class="evidence-split">
-          <div style="overflow-y:auto;max-height:500px;padding-right:4px;">
-            ${Object.values(groups).map(g => `
-              <div class="panel-title" style="margin-top:8px;">${g.title} (${g.items.length})</div>
-              ${g.items.map(ev => `
-                <div class="ev-item ${selectedEvidence && selectedEvidence.id === ev.id ? 'active' : ''}" onclick='pickEvidence(${JSON.stringify(ev).replace(/'/g, "&#39;")})'>
-                  <div style="display:flex;justify-content:space-between;font-weight:700;font-size:11px;">
-                    <span>${ev.rule_id}</span>
-                    <span style="color:var(--grey-dark);">${ev.file.split('/').pop()}</span>
-                  </div>
-                  <div style="font-size:11px;color:var(--grey-dark);margin-top:3px;">${ev.explanation}</div>
-                </div>
-              `).join("")}
-            `).join("")}
-          </div>
-          <div>
-            <div id="ev-header" style="margin-bottom:8px;font-weight:700;font-size:12px;"></div>
-            <div id="file-viewer" class="file-viewer">Sélectionnez une preuve à gauche.</div>
-          </div>
-        </div>`}
-      `;
-
-      if (compareMode) {
-        await renderCompareView(allEv);
-      } else if (selectedEvidence) {
-        await loadEvidenceFile(selectedEvidence, document.getElementById("file-viewer"), document.getElementById("ev-header"));
+      for (const f of c.findings) {
+        for (const e of f.evidences) allEv.push({ ...e, rule_id: f.rule_id, passed: f.passed });
       }
+      if (!allEv.length) { container.innerHTML = `<div class="card">Aucune preuve associée.</div>`; return; }
+      if (state.selectedEvidenceIdx >= allEv.length) state.selectedEvidenceIdx = 0;
+
+      const selected = allEv[state.selectedEvidenceIdx];
+      if (state.compareMode) {
+        const inp = allEv.find(e => e.source_type === "input") || selected;
+        const reg = allEv.find(e => e.source_type === "regulation" || e.source_type === "passport") || selected;
+        const [f1, f2] = await Promise.all([
+          api(`/api/files?path=${encodeURIComponent(inp.file)}`),
+          api(`/api/files?path=${encodeURIComponent(reg.file)}`),
+        ]);
+        container.innerHTML = `
+          <div class="compare-grid">
+            ${renderSourceBox(f1, inp)}
+            ${renderSourceBox(f2, reg)}
+          </div>`;
+        return;
+      }
+
+      const groups = { input: [], passport: [], regulation: [] };
+      allEv.forEach((e, idx) => groups[e.source_type]?.push({ ...e, idx }));
+      const labels = { input: "Fichier d'entrée", passport: "Passeport client", regulation: "Réglementation" };
+      const listHtml = Object.entries(groups).map(([k, items]) => {
+        if (!items.length) return "";
+        return `<div class="ev-group-title">${labels[k]}</div>` + items.map(it => `
+          <div class="ev-item ${it.idx === state.selectedEvidenceIdx ? "active" : ""}" onclick="pickEvidence(${it.idx})">
+            <div style="font-weight:700;">${esc(it.rule_id)} — ${esc(it.file)}</div>
+            <div style="font-size:11px;color:var(--muted);">${esc(it.explanation)}</div>
+          </div>
+        `).join("");
+      }).join("");
+
+      const fileData = await api(`/api/files?path=${encodeURIComponent(selected.file)}`);
+      container.innerHTML = `
+        <div class="split-view">
+          <div class="evidence-list">${listHtml}</div>
+          ${renderSourceBox(fileData, selected)}
+        </div>`;
     }
 
-    async function renderCompareView(allEv) {
-      const area = document.getElementById("compare-area");
-      const inp = allEv.find(e => e.source_type === "input" && !e.passed) || allEv.find(e => e.source_type === "input");
-      const reg = allEv.find(e => e.source_type === "regulation" && !e.passed) || allEv.find(e => e.source_type === "regulation");
-      area.innerHTML = `
-        <div>
-          <div class="panel-title" id="cmp-left-hdr">Fichier d'entrée</div>
-          <div class="file-viewer" id="cmp-left"></div>
-        </div>
-        <div>
-          <div class="panel-title" id="cmp-right-hdr">Réglementation</div>
-          <div class="file-viewer" id="cmp-right"></div>
-        </div>
-      `;
-      if (inp) await loadEvidenceFile(inp, document.getElementById("cmp-left"), document.getElementById("cmp-left-hdr"));
-      if (reg) await loadEvidenceFile(reg, document.getElementById("cmp-right"), document.getElementById("cmp-right-hdr"));
-    }
+    window.pickEvidence = function(idx) {
+      state.selectedEvidenceIdx = idx;
+      renderPreuves(currentCase());
+    };
 
-    async function loadEvidenceFile(ev, container, headerEl) {
-      headerEl.textContent = `${ev.file} — ${ev.explanation}`;
-      const res = await fetch(`/api/files?path=${encodeURIComponent(ev.file)}`);
-      if (!res.ok) { container.innerHTML = "<div style='padding:12px;'>Fichier introuvable.</div>"; return; }
-      const data = await res.json();
-
-      if (data.kind === "text") {
-        const s = ev.locator.line_start || 1;
-        const e = ev.locator.line_end || s;
-        container.innerHTML = data.lines.map((ln, idx) => {
-          const num = idx + 1;
-          const hl = num >= s && num <= e;
-          return `<div class="code-line ${hl ? 'line-highlight' : ''}" id="hl-${num}" title="${hl ? ev.explanation : ''}"><span class="line-num">${num}</span><span>${escapeHtml(ln)}</span></div>`;
+    function renderSourceBox(fileData, ev) {
+      let body = "";
+      const loc = ev.locator || {};
+      if (fileData.kind === "text") {
+        const ls = loc.line_start || -1, le = loc.line_end || -1;
+        body = fileData.lines.map((line, i) => {
+          const ln = i + 1;
+          const hl = ln >= ls && ln <= le ? "hl" : "";
+          return `<div class="code-line ${hl}" title="${hl ? esc(ev.explanation) : ""}"><span class="line-num">${ln}</span><span>${esc(line)}</span></div>`;
         }).join("");
-        const target = container.querySelector(".line-highlight");
-        if (target) target.scrollIntoView({ block: "center" });
-      } else if (data.kind === "csv") {
-        const targetRow = ev.locator.row;
-        const targetCol = ev.locator.column;
-        const colIdx = data.headers.indexOf(targetCol);
-        container.innerHTML = `<table><thead><tr>${data.headers.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>` +
-          data.rows.map((r, rIdx) => {
-            const csvRowNum = rIdx + 2;
-            return `<tr>${r.map((cell, cIdx) => {
-              const hl = csvRowNum === targetRow && (cIdx === colIdx || targetCol === undefined);
-              return `<td class="${hl ? 'cell-highlight' : ''}" title="${hl ? ev.explanation : ''}">${escapeHtml(cell)}</td>`;
-            }).join("")}</tr>`;
-          }).join("") + `</tbody></table>`;
-      } else if (data.kind === "json") {
-        const key = (ev.locator.json_path || "").replace("$.", "");
-        const lines = data.raw.split("\n");
-        container.innerHTML = lines.map((ln, idx) => {
-          const hl = key && ln.includes(`"${key}"`);
-          return `<div class="code-line ${hl ? 'line-highlight' : ''}" title="${hl ? ev.explanation : ''}"><span class="line-num">${idx + 1}</span><span>${escapeHtml(ln)}</span></div>`;
-        }).join("");
+      } else if (fileData.kind === "csv") {
+        const targetRow = loc.row || -1;
+        const targetCol = loc.column || "";
+        const colIdx = fileData.headers.indexOf(targetCol);
+        body = `<table><thead><tr>${fileData.headers.map(h => `<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>` +
+          fileData.rows.map((r, ri) => `<tr>${r.map((cell, ci) => {
+            const hl = (ri + 1 === targetRow && (colIdx === -1 || ci === colIdx)) ? "hl-cell" : "";
+            return `<td class="${hl}">${esc(cell)}</td>`;
+          }).join("")}</tr>`).join("") + `</tbody></table>`;
+      } else {
+        body = `<pre class="json-pre">${esc(fileData.raw)}</pre>`;
       }
+      return `
+        <div class="source-viewer">
+          <div class="source-header"><span>${esc(fileData.path)}</span><span style="font-size:11px;color:var(--muted);">${esc(ev.explanation)}</span></div>
+          <div>${body}</div>
+        </div>`;
     }
 
-    function renderExperts(el) {
-      const c = getSelectedCase();
-      if (!c) { el.innerHTML = "<p>Aucun dossier sélectionné.</p>"; return; }
-      const brief = c.micro_briefs.find(b => b.role === expertTabRole);
-      const existing = c.expert_responses[expertTabRole];
-      el.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-          <h2 style="margin:0;font-size:18px;">Gate 2 — Validation des Experts (${c.invoice.invoice_id})</h2>
-          <div style="display:flex;gap:8px;">
-            <button class="btn ${expertTabRole === 'AVOCAT' ? 'btn-primary' : ''}" onclick="expertTabRole='AVOCAT';renderMain()">Avocat Tax &amp; Legal</button>
-            <button class="btn ${expertTabRole === 'CONSULTANT' ? 'btn-primary' : ''}" onclick="expertTabRole='CONSULTANT';renderMain()">Consultant</button>
-          </div>
-        </div>
-        ${!brief ? `<div class="card">Aucune anomalie sur ce dossier — aucune intervention requise pour ${expertTabRole}.</div>` : `
-          <div class="card">
-            <div class="panel-title">${brief.title}</div>
-            <p>${brief.context_summary}</p>
-            <p style="font-weight:700;margin-top:12px;">${brief.question}</p>
-            <div style="margin:12px 0;">
-              <input id="exp-comment" style="width:100%;" placeholder="Commentaire justificatif de l'expert..." value="${existing ? escapeHtml(existing.comment) : ''}" />
-            </div>
-            <div style="display:flex;gap:8px;">
-              ${brief.options.map(opt => `<button class="btn btn-primary" onclick="submitGate2('${expertTabRole}', '${opt}')">${opt}</button>`).join("")}
-            </div>
-            ${existing ? `<div style="margin-top:12px;color:var(--green-dark);font-weight:700;">Réponse enregistrée : ${existing.decision} (${existing.timestamp})</div>` : ""}
-          </div>
-        `}
-      `;
-    }
-
-    function renderValidation(el) {
-      const c = getSelectedCase();
-      const tenant = document.getElementById("client-select").value;
-      el.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-          <h2 style="margin:0;font-size:18px;">Gate 3 — Validation Auditeur</h2>
-          <button class="btn btn-primary" onclick="bulkValidate('${tenant === 'ALL' ? 'CLIENT_A' : tenant}')">Valider en masse les dossiers verts</button>
-        </div>
-        ${!c ? "<p>Aucun dossier sélectionné.</p>" : `
-          <div class="card">
-            <div class="panel-title">Décision finale — ${c.invoice.invoice_id}</div>
-            <p>Statut actuel : ${statusBadge(c)} • Score : ${scoreBadge(c)}</p>
-            <p><strong>Recommandation SynthesisAgent :</strong> ${c.recommendation}</p>
-            <div style="display:flex;gap:10px;margin-top:14px;">
-              <button class="btn btn-primary" onclick="submitGate3('Valider')">Valider la conclusion</button>
-              <button class="btn btn-danger" onclick="submitGate3('Rejeter')">Rejeter / Escalader</button>
-            </div>
-          </div>
-        `}
-      `;
-    }
-
-    function renderFiche(el) {
-      const c = getSelectedCase();
-      if (!c) { el.innerHTML = "<p>Aucun dossier sélectionné.</p>"; return; }
-      el.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-          <h2 style="margin:0;font-size:18px;">Fiche de contrôle documentée — ${c.invoice.invoice_id}</h2>
-          <div style="display:flex;gap:8px;">
-            <a class="btn btn-primary" href="/api/cases/${encodeURIComponent(c.case_id)}/export/docx">Exporter .docx</a>
-            <a class="btn" href="/api/cases/${encodeURIComponent(c.case_id)}/export/md">Exporter .md</a>
-          </div>
-        </div>
-        <div class="card"><pre style="white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:12px;margin:0;">${escapeHtml(c.control_sheet_md)}</pre></div>
-      `;
-    }
-
-    function renderJournal(el) {
-      el.innerHTML = `
-        <h2 style="margin:0 0 14px;font-size:18px;">Journal d'audit structuré (Cloud Logging)</h2>
-        <div class="card" style="padding:0;">
-          <table>
-            <thead><tr><th>Timestamp</th><th>Session</th><th>Tenant</th><th>Acteur</th><th>Action</th><th>Verdict</th></tr></thead>
-            <tbody>
-              ${trustLogs.map(l => `
-                <tr>
-                  <td style="font-family:monospace;font-size:11px;">${l.timestamp}</td>
-                  <td style="font-family:monospace;font-size:11px;">${l.session_id}</td>
-                  <td>${l.tenant_id}</td>
-                  <td><strong>${l.agent}</strong></td>
-                  <td>${l.action}</td>
-                  <td><span class="badge ${l.verdict === 'BLOCK' || l.verdict === 'REJECT' ? 'badge-red' : (l.verdict === 'ANOMALIE' ? 'badge-amber' : 'badge-green')}">${l.verdict}</span></td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-        </div>
-      `;
-    }
-
-    function selectCase(cid) {
-      selectedCaseId = cid;
-      selectedEvidence = null;
-      renderMain();
-    }
-
-    function openFirstEvidence(ruleId) {
-      const c = getSelectedCase();
-      const f = c.findings.find(x => x.rule_id === ruleId);
-      if (f && f.evidences.length) {
-        selectedEvidence = { ...f.evidences[0], rule_id: f.rule_id, passed: f.passed, id: `${f.rule_id}-0` };
+    // EXPERTS (GATE 4)
+    function renderExperts(c) {
+      const el = document.getElementById("expertsBody");
+      if (!c) { el.innerHTML = ""; return; }
+      if (!["GATE3_APPROVED", "EXPERTS_ANSWERED", "SYNTHESIS_DONE", "GATE5_APPROVED", "DOCUMENTED"].includes(c.status)) {
+        el.innerHTML = `<div class="card">Les micro-briefs ne sont visibles aux experts qu'après approbation Gate 3 (statut actuel : <strong>${esc(c.status)}</strong>).</div>`;
+        return;
       }
-      compareMode = false;
-      setTab("preuves");
+      el.innerHTML = `<div class="grid-2">` + c.micro_briefs.map(b => {
+        const existing = c.expert_responses[b.role];
+        const canAnswer = c.status === "GATE3_APPROVED" || c.status === "EXPERTS_ANSWERED";
+        return `
+          <div class="card">
+            <h3>${esc(b.role)} — ${esc(b.title)}</h3>
+            <p>${esc(b.context_summary)}</p>
+            <p><strong>${esc(b.question)}</strong></p>
+            <input type="text" id="expComment_${b.role}" placeholder="Commentaire expert..." value="${esc(existing?.comment || "")}" style="margin-bottom:8px;" />
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              ${b.options.map(opt => `<button class="btn ${existing?.decision === opt ? "" : "btn-outline"}" ${canAnswer ? "" : "disabled"} onclick="submitGate4('${esc(c.case_id)}', '${esc(b.role)}', '${esc(opt)}')">${esc(opt)}</button>`).join("")}
+            </div>
+            ${existing ? `<div style="margin-top:8px;font-size:11px;color:var(--green-hover);">Répondu : <strong>${esc(existing.decision)}</strong> (${esc(existing.responder)})</div>` : ""}
+          </div>`;
+      }).join("") + `</div>`;
     }
 
-    function pickEvidence(ev) {
-      selectedEvidence = ev;
-      renderMain();
+    window.submitGate4 = async function(caseId, slot, decision) {
+      const comment = document.getElementById(`expComment_${slot}`).value;
+      try {
+        await api(`/api/cases/${encodeURIComponent(caseId)}/gate4`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ expert_slot: slot, decision, comment, actor_id: state.activeUser, actor_role: state.activeRole }),
+        });
+        await loadAll();
+      } catch (e) { alert(e.message); }
+    };
+
+    // VALIDATION (GATE 5)
+    document.getElementById("bulkGate5Btn").addEventListener("click", () => {
+      const c = currentCase();
+      if (c) bulkApprove(c.tenant_id, "GATE_5");
+    });
+
+    function renderValidation(c) {
+      const el = document.getElementById("validationBody");
+      if (!c) { el.innerHTML = ""; return; }
+      const needsManager = c.confidence_score < 40;
+      el.innerHTML = `
+        <div class="card">
+          <div class="row-between">
+            <strong>Score final : ${c.confidence_score}/100 ${scoreBadge(c)}</strong>
+            ${needsManager ? `<span class="badge badge-red">Score &lt; 40 : Rôle Manager obligatoire</span>` : `<span class="badge badge-green">Rôle Auditeur ou Manager</span>`}
+          </div>
+          <label style="display:block;margin-top:10px;font-weight:700;">Conclusion :</label>
+          <textarea id="g5Conclusion" rows="3">${esc(c.conclusion || c.recommendation)}</textarea>
+          <input type="text" id="g5Comment" placeholder="Commentaire de validation (obligatoire pour Edit ou Reject)..." style="margin-top:8px;" />
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <button class="btn" ${c.status === "SYNTHESIS_DONE" ? "" : "disabled"} onclick="submitGate5('${esc(c.case_id)}', 'Approve')">Approve &amp; Générer Fiche</button>
+            <button class="btn btn-amber" ${c.status === "SYNTHESIS_DONE" ? "" : "disabled"} onclick="submitGate5('${esc(c.case_id)}', 'Edit')">Edit &amp; Générer Fiche</button>
+            <button class="btn btn-danger" ${c.status === "SYNTHESIS_DONE" ? "" : "disabled"} onclick="submitGate5('${esc(c.case_id)}', 'Reject')">Reject (Re-run SynthesisAgent)</button>
+          </div>
+        </div>`;
     }
 
-    function toggleCompare() {
-      compareMode = !compareMode;
-      renderMain();
+    window.submitGate5 = async function(caseId, decision) {
+      const edited_conclusion = document.getElementById("g5Conclusion").value;
+      const comment = document.getElementById("g5Comment").value;
+      try {
+        await api(`/api/cases/${encodeURIComponent(caseId)}/gate5`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ decision, actor_id: state.activeUser, actor_role: state.activeRole, comment, edited_conclusion }),
+        });
+        await loadAll();
+      } catch (e) { alert(e.message); }
+    };
+
+    // FICHE DE CONTROLE
+    function renderFiche(c) {
+      const el = document.getElementById("ficheContent");
+      if (!c) { el.textContent = ""; return; }
+      const ready = c.status === "DOCUMENTED";
+      document.getElementById("exportMdBtn").disabled = !ready;
+      document.getElementById("exportDocxBtn").disabled = !ready;
+      el.textContent = ready ? c.control_sheet_md : `La fiche de contrôle n'est générée qu'après validation Gate 5 (statut actuel : ${c.status}).`;
     }
 
-    async function examineQuarantine(cid) {
-      const res = await fetch(`/api/quarantine/${encodeURIComponent(cid)}`);
-      const detail = await res.json();
-      selectedCaseId = cid;
-      selectedEvidence = {
-        source_type: "input",
-        file: detail.file,
-        locator: detail.locator,
-        explanation: detail.reason,
-        rule_id: "GATE_1",
-        passed: false,
-        id: "quarantine-0",
-      };
-      compareMode = false;
-      setTab("preuves");
+    document.getElementById("exportMdBtn").addEventListener("click", () => {
+      const c = currentCase();
+      if (c) window.open(`/api/cases/${encodeURIComponent(c.case_id)}/export/md`, "_blank");
+    });
+    document.getElementById("exportDocxBtn").addEventListener("click", () => {
+      const c = currentCase();
+      if (c) window.open(`/api/cases/${encodeURIComponent(c.case_id)}/export/docx`, "_blank");
+    });
+
+    // JOURNAL + FILTERS + DIFF MODAL
+    ["fCase", "fActor", "fRole", "fGate", "fAction"].forEach(id =>
+      document.getElementById(id).addEventListener("input", renderJournal)
+    );
+
+    function filteredEvents() {
+      const fc = document.getElementById("fCase").value.toLowerCase();
+      const fa = document.getElementById("fActor").value.toLowerCase();
+      const fr = document.getElementById("fRole").value.toLowerCase();
+      const fg = document.getElementById("fGate").value.toLowerCase();
+      const fac = document.getElementById("fAction").value.toLowerCase();
+      return state.events.filter(e =>
+        (!fc || e.case_id.toLowerCase().includes(fc)) &&
+        (!fa || e.actor_id.toLowerCase().includes(fa)) &&
+        (!fr || e.actor_role.toLowerCase().includes(fr)) &&
+        (!fg || e.gate.toLowerCase() === fg) &&
+        (!fac || e.action.toLowerCase().includes(fac))
+      );
     }
 
-    async function submitGate2(role, decision) {
-      const comment = document.getElementById("exp-comment")?.value || "";
-      await fetch(`/api/cases/${encodeURIComponent(selectedCaseId)}/gate2`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role, decision, comment, responder: `${role.toLowerCase()}@deloitte.fr` }),
-      });
-      await refreshData();
+    function renderJournal() {
+      const list = filteredEvents().slice().reverse();
+      document.getElementById("journalBody").innerHTML = list.map((e, i) => `
+        <tr class="clickable" onclick="openDiffModal('${esc(e.event_id)}')">
+          <td>${esc(e.timestamp_utc.slice(0, 19))}</td>
+          <td><span class="badge badge-gray">${esc(e.gate)}</span></td>
+          <td>${esc(e.actor_id)} <span style="color:var(--subtle);">(${esc(e.actor_role)})</span></td>
+          <td><strong>${esc(e.action)}</strong> / ${esc(e.decision)}</td>
+          <td>${esc(e.case_id)}</td>
+          <td style="font-family:monospace;font-size:11px;">${esc(e.hash.slice(0, 12))}...</td>
+        </tr>
+      `).join("");
     }
 
-    async function submitGate3(decision) {
-      await fetch(`/api/cases/${encodeURIComponent(selectedCaseId)}/gate3`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ decision, validator: "auditeur.senior@deloitte.fr" }),
-      });
-      await refreshData();
-    }
+    window.openDiffModal = function(eventId) {
+      const e = state.events.find(x => x.event_id === eventId);
+      if (!e) return;
+      document.getElementById("diffTitle").textContent = `${e.action} (${e.gate})`;
+      document.getElementById("diffMeta").innerHTML = `
+        <strong>ID :</strong> ${esc(e.event_id)} | <strong>Acteur :</strong> ${esc(e.actor_id)} (${esc(e.actor_role)})<br/>
+        <strong>Commentaire :</strong> ${esc(e.comment || "-")}<br/>
+        <strong>prev_hash :</strong> <code>${esc(e.prev_hash.slice(0, 16))}...</code> → <strong>hash :</strong> <code>${esc(e.hash.slice(0, 16))}...</code>
+      `;
+      document.getElementById("diffBefore").textContent = JSON.stringify(e.before || {}, null, 2);
+      document.getElementById("diffAfter").textContent = JSON.stringify(e.after || {}, null, 2);
+      document.getElementById("diffModal").classList.add("open");
+    };
+    window.closeDiffModal = function() { document.getElementById("diffModal").classList.remove("open"); };
 
-    async function bulkValidate(tenantId) {
-      await fetch(`/api/tenants/${tenantId}/bulk-validate`, { method: "POST" });
-      await refreshData();
-    }
+    document.getElementById("exportCsvBtn").addEventListener("click", () => {
+      window.open("/api/events/export/csv", "_blank");
+    });
 
-    async function uploadFile() {
-      const inp = document.getElementById("upload-file");
-      if (!inp.files.length) return;
-      const tenant = document.getElementById("client-select").value;
-      const targetTenant = tenant === "ALL" ? "CLIENT_B" : tenant;
+    document.getElementById("reseedBtn").addEventListener("click", async () => {
+      await api("/api/seed", { method: "POST" });
+      await loadAll();
+    });
+
+    document.getElementById("uploadBtn").addEventListener("click", async () => {
+      const inp = document.getElementById("uploadInput");
+      if (!inp.files.length) return alert("Sélectionnez un fichier.");
+      const tenant = document.getElementById("clientSelect").value || "CLIENT_B";
       const fd = new FormData();
       fd.append("file", inp.files[0]);
-      await fetch(`/api/tenants/${targetTenant}/upload`, { method: "POST", body: fd });
-      await refreshData();
+      await api(`/api/tenants/${tenant}/upload`, { method: "POST", body: fd });
+      await loadAll();
+    });
+
+    // SSE Live Stream
+    function connectSSE() {
+      const es = new EventSource("/api/events/stream");
+      const box = document.getElementById("liveLogStream");
+      es.addEventListener("audit_event", (ev) => {
+        const e = JSON.parse(ev.data);
+        if (!state.events.find(x => x.event_id === e.event_id)) {
+          state.events.push(e);
+          renderJournal();
+        }
+        const div = document.createElement("div");
+        div.className = "log-entry";
+        div.innerHTML = `<span style="color:var(--subtle);">[${esc(e.timestamp_utc.slice(11, 19))}]</span> <strong>${esc(e.gate)}</strong> ${esc(e.action)} → ${esc(e.decision)}`;
+        box.prepend(div);
+      });
     }
 
-    async function reseedDemo() {
-      await fetch("/api/seed", { method: "POST" });
-      await refreshData();
-    }
-
-    function escapeHtml(str) {
-      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    }
-
-    init();
+    loadAll().then(connectSSE);
   </script>
 </body>
 </html>
