@@ -43,6 +43,7 @@ class RuleCheckResult(BaseModel):
     label: str
     passed: bool
     evidence: str
+    reference: str = ""
 
 
 class MicroBrief(BaseModel):
@@ -74,4 +75,5 @@ class AuditCase(BaseModel):
     score_color: str = "GREEN"  # GREEN | ORANGE | RED
     recommendation: str = ""
     auditor_gate3: dict[str, Any] | None = None
+    governance_references: list[dict[str, str]] = Field(default_factory=list)
     fiche_controle_md: str = ""

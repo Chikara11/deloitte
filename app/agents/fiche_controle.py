@@ -26,13 +26,13 @@ def generate_fiche_controle(case: AuditCase) -> str:
         f"- **Sécurité Gate 1 :** `tenant_id` vérifié | Model Armor : `{inv.security.model_armor}` | PII masquées : `{inv.security.pii_masked}`.",
         "",
         "## 2. Règles Appliquées (Agent Auditeur)",
-        "| Règle | Résultat | Preuve / Source |",
-        "| :--- | :---: | :--- |",
+        "| Règle | Résultat | Preuve / Source | Référence Normative |",
+        "| :--- | :---: | :--- | :--- |",
     ]
 
     for r in case.rules:
         badge = "✅ OK" if r.passed else "❌ ANOMALIE"
-        lines.append(f"| **{r.label}** (`{r.rule_id}`) | {badge} | {r.evidence} |")
+        lines.append(f"| **{r.label}** (`{r.rule_id}`) | {badge} | {r.evidence} | {r.reference} |")
 
     lines.extend(["", "## 3. Avis des Experts (Gate 2 — Supervision Humaine)"])
     if not case.expert_responses:
@@ -56,6 +56,10 @@ def generate_fiche_controle(case: AuditCase) -> str:
             f"- **Score de Confiance :** **{case.confidence_score}/100** (`{case.score_color}`)",
             f"- **Recommandation :** {case.recommendation}",
             f"- **Valideur (Gate 3) :** {valideur}",
+            "",
+            "## 5. Références Réglementaires (EU AI Act • RGPD • Audit)",
         ]
     )
+    for ref in case.governance_references:
+        lines.append(f"- **[{ref['framework']}] {ref['citation']}** — {ref['summary']}")
     return "\n".join(lines)

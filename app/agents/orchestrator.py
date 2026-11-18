@@ -10,6 +10,7 @@ from app.agents.models import AuditCase, CanonicalInvoice, ExpertResponse
 from app.agents.passerelle_agent import run_passerelle_agent
 from app.agents.synthese_agent import compute_synthesis
 from app.data.audit_logger import audit_logger
+from app.data.governance_refs import PLATFORM_GOVERNANCE_REFS, RULE_REFERENCES
 
 
 def evaluate_invoice(invoice: CanonicalInvoice) -> AuditCase:
@@ -17,6 +18,9 @@ def evaluate_invoice(invoice: CanonicalInvoice) -> AuditCase:
     status, rules, explanation = run_auditeur_agent(invoice)
     briefs = run_passerelle_agent(invoice, rules) if status == "ANOMALIE" else []
 
+    refs = [r.model_dump() for r in PLATFORM_GOVERNANCE_REFS] + [
+        RULE_REFERENCES[r.rule_id].model_dump() for r in rules if r.rule_id in RULE_REFERENCES
+    ]
     case = AuditCase(
         case_id=f"{invoice.tenant_id}:{invoice.invoice_id}",
         tenant_id=invoice.tenant_id,
@@ -25,6 +29,7 @@ def evaluate_invoice(invoice: CanonicalInvoice) -> AuditCase:
         rules=rules,
         auditor_explanation=explanation,
         micro_briefs=briefs,
+        governance_references=refs,
     )
     score, color, rec = compute_synthesis(invoice.tenant_id, invoice.invoice_id, rules, {})
     case.confidence_score = score

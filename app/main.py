@@ -15,6 +15,7 @@ from sse_starlette.sse import EventSourceResponse
 from app.agents.models import AuditCase, CanonicalInvoice, LedgerEntry, SecurityMeta
 from app.agents.orchestrator import apply_auditor_gate3, apply_expert_response, evaluate_invoice
 from app.data.audit_logger import audit_logger
+from app.data.governance_refs import PLATFORM_GOVERNANCE_REFS, RULE_REFERENCES
 from app.data.ingest import QuarantineError, ingest_csv_to_canonical, ingest_file, ingest_pdf_to_canonical
 from app.data.passports import PASSPORTS
 from app.security.iam_impersonator import probe_cross_scope_access
@@ -55,6 +56,15 @@ async def list_passports() -> dict[str, Any]:
     return {k: v.model_dump() for k, v in PASSPORTS.items()}
 
 
+@app.get("/api/governance/references")
+async def list_governance_references() -> dict[str, Any]:
+    """Return all public EU AI Act, RGPD, and Audit/Accounting references."""
+    return {
+        "platform": [r.model_dump() for r in PLATFORM_GOVERNANCE_REFS],
+        "rules": {k: v.model_dump() for k, v in RULE_REFERENCES.items()},
+    }
+
+
 def _ingest_and_evaluate(tenant_id: str, path: Path) -> list[AuditCase]:
     try:
         invoices = ingest_file(tenant_id, path)
@@ -90,7 +100,12 @@ def _ingest_and_evaluate(tenant_id: str, path: Path) -> list[AuditCase]:
             confidence_score=0,
             score_color="RED",
             recommendation=f"BLOQUÉ À LA GATE 1 ({qerr.event_type}) : Document mis en quarantaine.",
-            fiche_controle_md=f"# QUARANTAINE SÉCURITÉ — {path.name}\n\n- **Raison :** {qerr.reason}\n",
+            governance_references=[r.model_dump() for r in PLATFORM_GOVERNANCE_REFS],
+            fiche_controle_md=(
+                f"# QUARANTAINE SÉCURITÉ — {path.name}\n\n"
+                f"- **Raison :** {qerr.reason}\n"
+                "- **Référence :** Règlement (UE) 2024/1689 (EU AI Act) Art. 9 & Art. 15 • RGPD Art. 32\n"
+            ),
         )
         _CASES[q_case.case_id] = q_case
         return [q_case]

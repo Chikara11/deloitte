@@ -5,6 +5,7 @@ from __future__ import annotations
 from app.agents.models import CanonicalInvoice, RuleCheckResult
 from app.config import settings
 from app.data.audit_logger import audit_logger
+from app.data.governance_refs import get_rule_reference
 from app.data.passports import get_passport
 
 
@@ -81,6 +82,9 @@ def run_auditeur_agent(invoice: CanonicalInvoice) -> tuple[str, list[RuleCheckRe
             evidence=f"Montant {invoice.amount_ht:,.0f} € vs seuil client {passport.regles.seuil_validation:,.0f} €.",
         )
     )
+
+    for r in rules:
+        r.reference = get_rule_reference(r.rule_id).citation
 
     failed = [r for r in rules if not r.passed]
     status = "OK" if not failed else "ANOMALIE"

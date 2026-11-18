@@ -81,6 +81,10 @@
         <span class="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-xs font-mono">SSE LIVE</span>
       </div>
       <div id="hud-feed" class="mt-3 flex-1 overflow-y-auto space-y-2 pr-1 font-mono text-xs"></div>
+      <div class="mt-3 pt-3 border-t border-slate-800 space-y-1.5">
+        <div class="text-xs font-bold text-indigo-300">📚 Références Réglementaires Actives (Toujours Affichées)</div>
+        <div id="refs-box" class="max-h-36 overflow-y-auto space-y-1 text-[11px] text-slate-300"></div>
+      </div>
     </aside>
   </main>
 
@@ -113,7 +117,19 @@
     function switchTenant() {
       currentTenant = document.getElementById("tenant-select").value;
       document.getElementById("hud-feed").innerHTML = "";
-      connectSSE();
+      function renderRefs(refs) {
+      const box = document.getElementById("refs-box");
+      box.innerHTML = refs.map(r => `<div class="p-1.5 rounded bg-slate-950 border border-slate-800"><span class="font-bold text-indigo-300">[${r.framework}] ${r.citation}</span> — <span class="text-slate-400">${r.summary}</span></div>`).join("");
+    }
+
+    async function loadBaseRefs() {
+      const res = await fetch("/api/governance/references");
+      const data = await res.json();
+      renderRefs([...data.platform, ...Object.values(data.rules)]);
+    }
+
+    connectSSE();
+    loadBaseRefs();
     }
 
     async function loadDemo(caseType) {
@@ -209,13 +225,16 @@
       document.getElementById("fiche-preview").textContent = c.fiche_controle_md;
 
       const panel = document.getElementById("role-panel");
+      if (c.governance_references?.length) {
+        renderRefs(c.governance_references);
+      }
       if (c.status === "QUARANTINE") {
         panel.innerHTML = `<div class="p-3 rounded-lg bg-rose-950/50 border border-rose-700 text-rose-200 font-semibold">${c.recommendation}</div>`;
         return;
       }
 
       if (activeTab === "AUDITEUR") {
-        const rulesHtml = c.rules.map(r => `<div class="flex justify-between p-2 rounded bg-slate-950 border border-slate-800"><span>${r.passed ? "✅" : "❌"} <b>${r.rule_id}</b> — ${r.evidence}</span></div>`).join("");
+        const rulesHtml = c.rules.map(r => `<div class="p-2 rounded bg-slate-950 border border-slate-800 space-y-0.5"><div>${r.passed ? "✅" : "❌"} <b>${r.rule_id}</b> — ${r.evidence}</div><div class="text-[11px] font-mono text-indigo-300">📚 Réf : ${r.reference}</div></div>`).join("");
         panel.innerHTML = `
           <div class="p-2.5 rounded bg-slate-950 border border-slate-800 text-slate-200">${c.auditor_explanation}</div>
           <div class="space-y-1.5">${rulesHtml}</div>
@@ -272,7 +291,19 @@
       window.open(`/api/cases/${encodeURIComponent(selectedCaseId)}/fiche`, "_blank");
     }
 
+    function renderRefs(refs) {
+      const box = document.getElementById("refs-box");
+      box.innerHTML = refs.map(r => `<div class="p-1.5 rounded bg-slate-950 border border-slate-800"><span class="font-bold text-indigo-300">[${r.framework}] ${r.citation}</span> — <span class="text-slate-400">${r.summary}</span></div>`).join("");
+    }
+
+    async function loadBaseRefs() {
+      const res = await fetch("/api/governance/references");
+      const data = await res.json();
+      renderRefs([...data.platform, ...Object.values(data.rules)]);
+    }
+
     connectSSE();
+    loadBaseRefs();
   </script>
 </body>
 </html>

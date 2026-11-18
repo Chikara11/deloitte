@@ -37,6 +37,9 @@ def test_auditbridge_3_demo_cases_and_confidence_formula(tmp_path: Path) -> None
     assert c1["confidence_score"] == 100
     assert c1["score_color"] == "GREEN"
     assert "FICHE DE CONTRÔLE INTERNE" in c1["fiche_controle_md"]
+    assert "EU AI Act" in c1["fiche_controle_md"]
+    assert all(r["reference"] for r in c1["rules"])
+    assert len(c1["governance_references"]) >= 5
 
     # Case 2: 2M€ Intercompany CLIENT_B -> 4 rules failed -> Gate 2 Avocat + Consultant -> Score 0 RED -> Gate 3
     r2 = client.post("/api/tenants/CLIENT_B/load-demo?case_type=interco")
