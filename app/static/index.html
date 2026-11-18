@@ -9,83 +9,100 @@
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #ffffff;
-      --surface: #f8f9fa;
+      --bg: #f5f5f7;
+      --surface: #ffffff;
       --black: #000000;
       --green: #86bc25;
       --green-hover: #26890d;
-      --green-soft: rgba(134, 188, 37, 0.16);
-      --text: #222222;
-      --muted: #53565a;
-      --subtle: #97999b;
-      --border: #d0d0ce;
+      --green-soft: rgba(134, 188, 37, 0.14);
+      --text: #1d1d1f;
+      --muted: #6e6e73;
+      --subtle: #8e8e93;
+      --border: rgba(0, 0, 0, 0.08);
       --amber: #ed8b00;
       --red: #da291c;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: "Open Sans", Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Open Sans", sans-serif;
       background: var(--bg);
       color: var(--text);
+      -webkit-font-smoothing: antialiased;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
       font-size: 13px;
     }
+
+    /* Apple Frosted Black Header + Deloitte Green Accent */
     header {
-      background: var(--black);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(0, 0, 0, 0.92);
+      backdrop-filter: blur(16px);
       color: #ffffff;
-      padding: 12px 24px;
+      padding: 12px 26px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       border-bottom: 2px solid var(--green);
-      gap: 16px;
+      gap: 14px;
       flex-wrap: wrap;
     }
-    .brand { display: flex; align-items: center; gap: 12px; }
-    .wordmark { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; display: flex; align-items: center; gap: 6px; }
-    .green-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; }
-    .subtitle { font-size: 11px; color: #cccccc; border-left: 1px solid #444; padding-left: 12px; }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .wordmark { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; display: flex; align-items: center; gap: 7px; }
+    .green-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+      display: inline-block; box-shadow: 0 0 10px var(--green);
+    }
+    .subtitle { font-size: 11px; color: #d0d0ce; border-left: 1px solid rgba(255,255,255,0.2); padding-left: 14px; }
     .header-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .header-controls label { font-size: 11px; color: #bbb; }
+    .header-controls label { font-size: 11px; color: #a1a1a6; font-weight: 600; }
     .header-controls select {
-      background: #1a1a1a;
+      background: rgba(255, 255, 255, 0.1);
       color: #fff;
-      border: 1px solid #444;
-      border-radius: 4px;
-      padding: 6px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+      padding: 6px 14px;
       font-family: inherit;
       font-size: 12px;
+      font-weight: 600;
+      outline: none;
     }
     .user-pill {
       font-size: 11px;
-      color: #ddd;
-      background: #1f1f1f;
-      border: 1px solid #333;
-      border-radius: 4px;
-      padding: 5px 10px;
+      font-weight: 600;
+      color: #e5e5ea;
+      background: rgba(255, 255, 255, 0.09);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      padding: 5px 12px;
     }
+
+    /* Layout */
     .layout {
       display: grid;
-      grid-template-columns: 205px 1fr 330px;
+      grid-template-columns: 220px 1fr 340px;
       flex: 1;
       min-height: 0;
     }
+
+    /* Apple-clean Sidebar */
     nav {
-      border-right: 1px solid var(--border);
-      background: var(--surface);
-      padding: 14px 10px;
+      padding: 20px 14px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.65);
+      border-right: 1px solid var(--border);
     }
     .nav-btn {
       background: transparent;
-      border: 1px solid transparent;
-      border-radius: 4px;
-      padding: 9px 12px;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
       text-align: left;
       font-family: inherit;
       font-size: 13px;
@@ -94,131 +111,201 @@
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 9px;
+      gap: 10px;
+      transition: all 0.2s ease;
     }
-    .nav-btn:hover { background: #eef1ee; color: var(--text); }
+    .nav-btn:hover { background: rgba(0, 0, 0, 0.04); color: var(--black); }
     .nav-btn.active {
-      background: #ffffff;
-      color: var(--black);
-      border-color: var(--border);
-      border-left: 3px solid var(--green);
+      background: var(--black);
+      color: #ffffff;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.14);
     }
-    .nav-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
-    main { padding: 20px 24px; overflow-y: auto; padding-bottom: 64px; }
+    .nav-btn.active svg { stroke: var(--green); }
+    .nav-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.9; flex-shrink: 0; }
+
+    main { padding: 24px 28px; overflow-y: auto; padding-bottom: 72px; }
     aside {
       border-left: 1px solid var(--border);
-      background: var(--surface);
-      padding: 16px;
+      background: rgba(255, 255, 255, 0.72);
+      padding: 20px 18px;
       overflow-y: auto;
-      padding-bottom: 64px;
+      padding-bottom: 72px;
     }
-    h2 { margin: 0 0 12px; font-size: 17px; font-weight: 700; color: var(--black); }
-    h3 { margin: 14px 0 8px; font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+
+    h2 { margin: 0 0 14px; font-size: 20px; font-weight: 700; letter-spacing: -0.4px; color: var(--black); }
+    h3 { margin: 18px 0 8px; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.7px; }
+
     .card {
-      background: #ffffff;
+      background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 14px 16px;
-      margin-bottom: 14px;
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.04);
+      animation: fadeSlide 0.25s ease;
+    }
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     .row-between { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    /* Apple Pill Buttons */
     .btn {
       background: var(--green);
       color: #ffffff;
-      border: 1px solid var(--green);
-      border-radius: 4px;
-      padding: 7px 13px;
+      border: none;
+      border-radius: 999px;
+      padding: 8px 16px;
       font-family: inherit;
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
+      transition: all 0.18s ease;
     }
-    .btn:hover { background: var(--green-hover); border-color: var(--green-hover); }
-    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    .btn-outline { background: #fff; color: var(--text); border: 1px solid var(--border); }
-    .btn-outline:hover { background: #f2f2f2; }
-    .btn-danger { background: var(--red); border-color: var(--red); color: #fff; }
+    .btn:hover { background: var(--green-hover); transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .btn-outline {
+      background: #ffffff;
+      color: var(--text);
+      border: 1px solid rgba(0, 0, 0, 0.14);
+    }
+    .btn-outline:hover { background: #f2f2f7; }
+    .btn-header-ghost {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+    .btn-header-ghost:hover { background: rgba(255, 255, 255, 0.22); }
+    .btn-danger { background: var(--red); color: #fff; }
     .btn-danger:hover { background: #b51f14; }
-    .btn-amber { background: var(--amber); border-color: var(--amber); color: #fff; }
+    .btn-amber { background: var(--amber); color: #fff; }
+    .btn-amber:hover { background: #cc7700; }
+
     .badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 999px;
       font-size: 11px;
       font-weight: 700;
-      border: 1px solid transparent;
     }
-    .badge-green { background: rgba(38, 137, 13, 0.12); color: var(--green-hover); border-color: rgba(38, 137, 13, 0.3); }
-    .badge-amber { background: rgba(237, 139, 0, 0.12); color: #b56800; border-color: rgba(237, 139, 0, 0.35); }
-    .badge-red { background: rgba(218, 41, 28, 0.12); color: var(--red); border-color: rgba(218, 41, 28, 0.3); }
-    .badge-gray { background: #f0f0ef; color: var(--muted); border-color: var(--border); }
+    .badge-green { background: rgba(134, 188, 37, 0.16); color: var(--green-hover); }
+    .badge-amber { background: rgba(237, 139, 0, 0.15); color: #b56800; }
+    .badge-red { background: rgba(218, 41, 28, 0.14); color: var(--red); }
+    .badge-gray { background: #efeff4; color: var(--muted); }
+
     table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th, td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; }
-    th { font-weight: 700; color: var(--muted); background: var(--surface); font-size: 11px; text-transform: uppercase; }
-    tr.clickable { cursor: pointer; }
-    tr.clickable:hover { background: #f5f9ee; }
+    th, td { padding: 11px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+    th { font-weight: 700; color: var(--muted); background: #fafafa; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; }
+    tr:last-child td { border-bottom: none; }
+    tr.clickable { cursor: pointer; transition: background 0.15s ease; }
+    tr.clickable:hover { background: #f8fbf2; }
     tr.selected { background: var(--green-soft); }
 
-    /* Stepper */
-    .stepper { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin: 10px 0 14px; }
+    /* Animated Stepper */
+    .stepper {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin: 10px 0 18px;
+      background: #fff;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
     .step-pill {
       font-size: 10px;
-      padding: 3px 7px;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-      background: #fff;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #f5f5f7;
       color: var(--subtle);
-      font-weight: 600;
+      font-weight: 700;
+      transition: all 0.25s ease;
     }
-    .step-pill.done { background: rgba(134, 188, 37, 0.16); color: var(--green-hover); border-color: var(--green); }
-    .step-pill.current { background: var(--black); color: #fff; border-color: var(--black); }
-    .step-pill.blocked { background: rgba(218, 41, 28, 0.14); color: var(--red); border-color: var(--red); }
+    .step-pill.done { background: var(--green-soft); color: var(--green-hover); }
+    .step-pill.current {
+      background: var(--black);
+      color: #fff;
+      box-shadow: 0 0 0 3px var(--green-soft);
+    }
+    .step-pill.blocked { background: rgba(218, 41, 28, 0.14); color: var(--red); }
 
     /* Evidence Viewer */
-    .split-view { display: grid; grid-template-columns: 320px 1fr; gap: 14px; min-height: 460px; }
-    .evidence-list { border: 1px solid var(--border); border-radius: 4px; overflow-y: auto; max-height: 540px; }
-    .ev-group-title { padding: 7px 10px; background: var(--surface); font-size: 11px; font-weight: 700; color: var(--muted); border-bottom: 1px solid var(--border); }
-    .ev-item { padding: 9px 10px; border-bottom: 1px solid var(--border); cursor: pointer; }
-    .ev-item:hover { background: #f6f9f0; }
-    .ev-item.active { background: var(--green-soft); border-left: 3px solid var(--green); }
-    .source-viewer { border: 1px solid var(--border); border-radius: 4px; background: #fff; overflow: auto; max-height: 540px; }
-    .source-header { padding: 8px 12px; background: var(--surface); border-bottom: 1px solid var(--border); font-weight: 700; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
-    .code-line { display: flex; font-family: ui-monospace, Menlo, monospace; font-size: 12px; line-height: 1.55; padding: 1px 10px; }
+    .split-view { display: grid; grid-template-columns: 320px 1fr; gap: 16px; min-height: 460px; }
+    .evidence-list {
+      background: #fff; border: 1px solid var(--border); border-radius: 14px;
+      overflow-y: auto; max-height: 540px; box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+    }
+    .ev-group-title { padding: 9px 14px; background: #fafafa; font-size: 11px; font-weight: 700; color: var(--muted); border-bottom: 1px solid var(--border); text-transform: uppercase; }
+    .ev-item { padding: 11px 14px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s ease; }
+    .ev-item:hover { background: #f8fbf2; }
+    .ev-item.active { background: var(--green-soft); border-left: 4px solid var(--green); }
+    .source-viewer {
+      border: 1px solid var(--border); border-radius: 14px; background: #fff;
+      overflow: auto; max-height: 540px; box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+    }
+    .source-header { padding: 11px 16px; background: #fafafa; border-bottom: 1px solid var(--border); font-weight: 700; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .code-line { display: flex; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 1.6; padding: 2px 12px; }
     .line-num { width: 40px; color: var(--subtle); user-select: none; flex-shrink: 0; }
-    .code-line.hl { background: var(--green-soft); border-left: 4px solid var(--red); padding-left: 6px; font-weight: 600; }
-    td.hl-cell { background: var(--green-soft); border-left: 3px solid var(--red); font-weight: 700; }
-    .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .code-line.hl { background: var(--green-soft); border-left: 4px solid var(--red); padding-left: 8px; font-weight: 600; }
+    td.hl-cell { background: var(--green-soft); border-left: 4px solid var(--red); font-weight: 700; }
+    .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
     /* Trust panel & logs */
-    .metric-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #ececea; font-size: 12px; }
-    .quarantine-box { border: 1px solid var(--red); background: rgba(218, 41, 28, 0.06); border-radius: 4px; padding: 10px; margin-bottom: 10px; }
-    .log-stream { max-height: 280px; overflow-y: auto; font-family: ui-monospace, Menlo, monospace; font-size: 11px; background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 8px; }
-    .log-entry { padding: 4px 0; border-bottom: 1px dashed #eee; }
+    .metric-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+    .metric-row:last-child { border-bottom: none; }
+    .quarantine-box {
+      border: 1px solid rgba(218, 41, 28, 0.35);
+      background: rgba(218, 41, 28, 0.06);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+    .log-stream {
+      max-height: 290px; overflow-y: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px; background: #fff; border: 1px solid var(--border);
+      border-radius: 12px; padding: 10px 12px;
+    }
+    .log-entry { padding: 5px 0; border-bottom: 1px dashed rgba(0,0,0,0.08); }
 
     textarea, input[type="text"], select.field {
       width: 100%;
-      padding: 7px 9px;
-      border: 1px solid var(--border);
-      border-radius: 4px;
+      padding: 9px 12px;
+      border: 1px solid rgba(0, 0, 0, 0.14);
+      border-radius: 10px;
       font-family: inherit;
       font-size: 12px;
+      background: #fff;
+      outline: none;
     }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .filter-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 10px; }
+    textarea:focus, input[type="text"]:focus { border-color: var(--green); box-shadow: 0 0 0 3px var(--green-soft); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .filter-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 12px; }
+
     .modal-backdrop {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none;
-      align-items: center; justify-content: center; z-index: 50;
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(6px);
+      display: none; align-items: center; justify-content: center; z-index: 50;
     }
     .modal-backdrop.open { display: flex; }
     .modal-box {
-      background: #fff; border: 1px solid var(--border); border-radius: 4px;
-      width: 720px; max-width: 94vw; max-height: 85vh; overflow-y: auto; padding: 18px;
+      background: #fff; border: 1px solid var(--border); border-radius: 16px;
+      width: 740px; max-width: 94vw; max-height: 85vh; overflow-y: auto; padding: 22px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.24);
     }
-    pre.json-pre { background: #f8f9fa; border: 1px solid var(--border); padding: 10px; border-radius: 4px; font-size: 11px; overflow: auto; }
+    pre.json-pre { background: #f5f5f7; border: 1px solid var(--border); padding: 12px; border-radius: 10px; font-size: 11px; overflow: auto; }
     footer {
       position: fixed; bottom: 0; left: 0; right: 0;
-      background: var(--black); color: #d0d0ce; text-align: center;
-      padding: 7px 16px; font-size: 11px; border-top: 1px solid #333; z-index: 30;
+      background: rgba(0, 0, 0, 0.92); backdrop-filter: blur(10px);
+      color: #a1a1a6; text-align: center;
+      padding: 8px 16px; font-size: 11px; border-top: 1px solid rgba(255,255,255,0.1); z-index: 30;
+    }
+    @media (max-width: 1024px) {
+      .layout { grid-template-columns: 1fr; }
+      nav { flex-direction: row; overflow-x: auto; border-right: none; border-bottom: 1px solid var(--border); }
+      aside { border-left: none; border-top: 1px solid var(--border); }
     }
   </style>
 </head>
@@ -226,7 +313,7 @@
   <header>
     <div class="brand">
       <div class="wordmark">AuditBridge <span class="green-dot"></span></div>
-      <div class="subtitle">Hackathon Deloitte × Google Cloud — 5-Gate HITL &amp; Audit Chain</div>
+      <div class="subtitle">Hackathon Deloitte × Google Cloud — 5-Gate HITL</div>
     </div>
     <div class="header-controls">
       <label for="clientSelect">Client :</label>
@@ -244,8 +331,8 @@
         <option value="Analyste sécurité">Analyste sécurité</option>
       </select>
       <span class="user-pill" id="activeUserPill">auditeur.senior@deloitte.fr</span>
-      <a href="/presentation" target="_blank" class="btn btn-outline" style="text-decoration:none;padding:5px 10px;">Présentation 3 min</a>
-      <button class="btn btn-outline" id="reseedBtn" style="padding:5px 10px;">Réinitialiser démo</button>
+      <a href="/presentation" target="_blank" class="btn btn-header-ghost" style="text-decoration:none;padding:6px 14px;">Présentation 3 min</a>
+      <button class="btn btn-header-ghost" id="reseedBtn" style="padding:6px 14px;">Réinitialiser démo</button>
     </div>
   </header>
 
@@ -282,16 +369,15 @@
     </nav>
 
     <main>
-      <!-- TAB 1: DOSSIERS -->
       <section id="tab-dossiers" class="tab-panel">
-        <div class="row-between" style="margin-bottom:12px;">
+        <div class="row-between" style="margin-bottom:14px;">
           <h2 style="margin:0;">Dossiers d'audit</h2>
           <div style="display:flex;gap:8px;align-items:center;">
             <input type="file" id="uploadInput" style="font-size:12px;" />
             <button class="btn" id="uploadBtn">Importer une pièce</button>
           </div>
         </div>
-        <div class="card" style="padding:0;">
+        <div class="card" style="padding:0;overflow:hidden;">
           <table>
             <thead>
               <tr>
@@ -309,7 +395,6 @@
         </div>
       </section>
 
-      <!-- TAB 2: ANALYSE & GATES 1-3 -->
       <section id="tab-analyse" class="tab-panel" style="display:none;">
         <div class="row-between" style="margin-bottom:8px;">
           <h2 id="analyseTitle" style="margin:0;">Analyse &amp; Contrôle HITL</h2>
@@ -319,33 +404,29 @@
         <div id="analyseBody"></div>
       </section>
 
-      <!-- TAB 3: PREUVES -->
       <section id="tab-preuves" class="tab-panel" style="display:none;">
-        <div class="row-between" style="margin-bottom:12px;">
+        <div class="row-between" style="margin-bottom:14px;">
           <h2 style="margin:0;">Visualiseur de preuves tracées</h2>
           <button class="btn btn-outline" id="toggleCompareBtn">Mode Comparer</button>
         </div>
         <div id="preuvesContainer"></div>
       </section>
 
-      <!-- TAB 4: EXPERTS (GATE 4) -->
       <section id="tab-experts" class="tab-panel" style="display:none;">
         <h2>Gate 4 — Consultation des Experts</h2>
         <div id="expertsBody"></div>
       </section>
 
-      <!-- TAB 5: VALIDATION (GATE 5) -->
       <section id="tab-validation" class="tab-panel" style="display:none;">
-        <div class="row-between" style="margin-bottom:12px;">
+        <div class="row-between" style="margin-bottom:14px;">
           <h2 style="margin:0;">Gate 5 — Validation Finale</h2>
           <button class="btn" id="bulkGate5Btn">Valider dossiers verts en masse (Gate 5)</button>
         </div>
         <div id="validationBody"></div>
       </section>
 
-      <!-- TAB 6: FICHE DE CONTROLE -->
       <section id="tab-fiche" class="tab-panel" style="display:none;">
-        <div class="row-between" style="margin-bottom:12px;">
+        <div class="row-between" style="margin-bottom:14px;">
           <h2 style="margin:0;">Fiche de contrôle interne</h2>
           <div style="display:flex;gap:8px;">
             <button class="btn btn-outline" id="exportMdBtn">Exporter .md</button>
@@ -355,10 +436,9 @@
         <div class="card" id="ficheContent" style="white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-size:12px;"></div>
       </section>
 
-      <!-- TAB 7: JOURNAL -->
       <section id="tab-journal" class="tab-panel" style="display:none;">
-        <div class="row-between" style="margin-bottom:10px;">
-          <h2 style="margin:0;">Journal d'audit immuable (SHA-256 Chain)</h2>
+        <div class="row-between" style="margin-bottom:12px;">
+          <h2 style="margin:0;">Journal d'audit immuable (Chaîne SHA-256)</h2>
           <button class="btn btn-outline" id="exportCsvBtn">Exporter CSV</button>
         </div>
         <div class="filter-bar">
@@ -376,7 +456,7 @@
           </select>
           <input type="text" id="fAction" placeholder="Filtrer action..." />
         </div>
-        <div class="card" style="padding:0;">
+        <div class="card" style="padding:0;overflow:hidden;">
           <table>
             <thead>
               <tr>
@@ -394,16 +474,15 @@
       </section>
     </main>
 
-    <!-- RIGHT TRUST & GOVERNANCE PANEL -->
     <aside>
-      <h2 style="font-size:15px;">Trust &amp; Governance</h2>
-      <div class="card" style="padding:10px 12px;">
+      <h2 style="font-size:16px;">Trust &amp; Governance</h2>
+      <div class="card" style="padding:12px 16px;">
         <div class="metric-row"><span>Stockage</span><strong id="mStorage">memory</strong></div>
         <div class="metric-row"><span>Isolation tenant</span><span class="badge badge-green" id="mTenant">Vérifiée</span></div>
         <div class="metric-row"><span>PII masquées (DLP)</span><strong id="mPii">0</strong></div>
         <div class="metric-row"><span>Blocs Model Armor</span><strong id="mArmor">0</strong></div>
         <div class="metric-row"><span>Rejets Skeptic</span><strong id="mSkeptic">0</strong></div>
-        <div class="metric-row" style="border-bottom:none;"><span>Étape harness</span><strong id="mStep">IDLE</strong></div>
+        <div class="metric-row"><span>Étape harness</span><strong id="mStep">IDLE</strong></div>
       </div>
 
       <h3>Quarantaine (Gate 1)</h3>
@@ -414,7 +493,6 @@
     </aside>
   </div>
 
-  <!-- Diff Modal -->
   <div class="modal-backdrop" id="diffModal">
     <div class="modal-box">
       <div class="row-between" style="margin-bottom:10px;">
@@ -529,7 +607,6 @@
       if (!state.selectedCaseId || !cases.find(c => c.case_id === state.selectedCaseId)) {
         state.selectedCaseId = cases[0]?.case_id || null;
       }
-      // Verify chains
       for (const c of cases) {
         state.chainMap[c.case_id] = await api(`/api/cases/${encodeURIComponent(c.case_id)}/verify-chain`).catch(() => ({ valid: false }));
       }
@@ -555,8 +632,8 @@
         qList.innerHTML = qCases.map(q => `
           <div class="quarantine-box">
             <div style="font-weight:700;color:var(--red);">${esc(q.invoice.source_file)}</div>
-            <div style="font-size:11px;margin:4px 0;">${esc(q.quarantine_reason)}</div>
-            <button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="examineQuarantine('${esc(q.case_id)}')">Examiner (Gate 1)</button>
+            <div style="font-size:11px;margin:4px 0 8px;">${esc(q.quarantine_reason)}</div>
+            <button class="btn btn-danger" style="padding:5px 12px;font-size:11px;" onclick="examineQuarantine('${esc(q.case_id)}')">Examiner (Gate 1)</button>
           </div>
         `).join("");
       }
@@ -630,11 +707,11 @@
         el.innerHTML = `
           <div class="quarantine-box">
             <strong>Quarantaine Gate 1 :</strong> ${esc(c.quarantine_reason)}
-            <pre class="json-pre" style="margin-top:8px;">${esc(c.quarantine_raw_text)}</pre>
-            <div style="margin-top:10px;">
-              <label>Commentaire obligatoire (Analyste sécurité) :</label>
+            <pre class="json-pre" style="margin-top:10px;">${esc(c.quarantine_raw_text)}</pre>
+            <div style="margin-top:12px;">
+              <label style="font-weight:700;display:block;margin-bottom:6px;">Commentaire obligatoire (Analyste sécurité) :</label>
               <input type="text" id="g1Comment" placeholder="Justification Release ou Confirm block..." />
-              <div style="display:flex;gap:8px;margin-top:8px;">
+              <div style="display:flex;gap:8px;margin-top:10px;">
                 <button class="btn" onclick="submitGate1('${esc(c.case_id)}', 'Release')">Release (Autoriser)</button>
                 <button class="btn btn-danger" onclick="submitGate1('${esc(c.case_id)}', 'Confirm block')">Confirm block (Rejeter)</button>
               </div>
@@ -643,12 +720,12 @@
         return;
       }
 
-      const rulesHtml = c.findings.map((f, idx) => `
+      const rulesHtml = c.findings.map(f => `
         <tr>
           <td><strong>${esc(f.label)}</strong><div style="font-size:11px;color:var(--subtle);">${esc(f.rule_id)}</div></td>
           <td><span class="badge ${f.passed ? "badge-green" : "badge-red"}">${f.passed ? "CONFORME" : "ANOMALIE"}</span></td>
           <td>${esc(f.summary)}</td>
-          <td><button class="btn btn-outline" style="padding:3px 8px;font-size:11px;" onclick="toggleRuleOverride('${esc(c.case_id)}', '${esc(f.rule_id)}', ${!f.passed})">Surcharger</button></td>
+          <td><button class="btn btn-outline" style="padding:4px 10px;font-size:11px;" onclick="toggleRuleOverride('${esc(c.case_id)}', '${esc(f.rule_id)}', ${!f.passed})">Surcharger</button></td>
         </tr>
       `).join("");
 
@@ -658,12 +735,12 @@
             <strong>Gate 2 — Validation AuditorAgent (Rôle requis : Auditeur)</strong>
             ${c.score_color === "green" ? `<button class="btn" onclick="bulkApprove('${esc(c.tenant_id)}', 'GATE_2')">Bulk Approve Vert (Gate 2)</button>` : ""}
           </div>
-          <div style="margin:8px 0;font-size:12px;">
-            <strong>Fichiers dans le périmètre :</strong>
+          <div style="margin:10px 0;font-size:12px;">
+            <strong style="display:block;margin-bottom:4px;">Fichiers dans le périmètre :</strong>
             <input type="text" id="g2Scope" value="${esc((c.scope_files || []).join(", "))}" />
           </div>
           <input type="text" id="g2Comment" placeholder="Commentaire (obligatoire pour Edit ou Reject)..." />
-          <div style="display:flex;gap:8px;margin-top:8px;">
+          <div style="display:flex;gap:8px;margin-top:10px;">
             <button class="btn" onclick="submitGate2('${esc(c.case_id)}', 'Approve')">Approve</button>
             <button class="btn btn-amber" onclick="submitGate2('${esc(c.case_id)}', 'Edit')">Edit périmètre</button>
             <button class="btn btn-danger" onclick="submitGate2('${esc(c.case_id)}', 'Reject')">Reject (Re-run AuditorAgent)</button>
@@ -673,16 +750,16 @@
       const gate3Box = c.status === "BRIEFS_DRAFTED" ? `
         <div class="card" style="border-left:4px solid var(--green);">
           <strong>Gate 3 — Revue des Micro-Briefs avant envoi aux Experts (Rôle requis : Auditeur)</strong>
-          <div style="font-size:11px;color:var(--muted);margin:4px 0 8px;">Vérification DLP automatique anti-fuite de données personnelles avant publication aux experts.</div>
+          <div style="font-size:11px;color:var(--muted);margin:4px 0 10px;">Vérification DLP automatique anti-fuite de données personnelles avant publication aux experts.</div>
           ${c.micro_briefs.map((b, i) => `
-            <div style="margin-bottom:10px;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
+            <div style="margin-bottom:10px;padding:12px;background:#fafafa;border:1px solid var(--border);border-radius:12px;">
               <strong>${esc(b.role)} — ${esc(b.title)}</strong>
-              <textarea id="briefCtx_${i}" rows="2" style="margin-top:4px;">${esc(b.context_summary)}</textarea>
-              <input type="text" id="briefQ_${i}" value="${esc(b.question)}" style="margin-top:4px;" />
+              <textarea id="briefCtx_${i}" rows="2" style="margin-top:6px;">${esc(b.context_summary)}</textarea>
+              <input type="text" id="briefQ_${i}" value="${esc(b.question)}" style="margin-top:6px;" />
             </div>
           `).join("")}
           <input type="text" id="g3Comment" placeholder="Commentaire (obligatoire pour Edit ou Reject)..." />
-          <div style="display:flex;gap:8px;margin-top:8px;">
+          <div style="display:flex;gap:8px;margin-top:10px;">
             <button class="btn" onclick="submitGate3('${esc(c.case_id)}', 'Approve')">Approve &amp; Envoyer aux Experts</button>
             <button class="btn btn-amber" onclick="submitGate3('${esc(c.case_id)}', 'Edit')">Edit &amp; Envoyer</button>
             <button class="btn btn-danger" onclick="submitGate3('${esc(c.case_id)}', 'Reject')">Reject (Re-run BridgeAgent)</button>
@@ -692,20 +769,20 @@
       el.innerHTML = `
         <div class="grid-2">
           <div class="card">
-            <div style="font-size:11px;color:var(--muted);">SYNTHÈSE PIÈCE</div>
-            <div style="font-size:16px;font-weight:700;margin:4px 0;">${esc(c.invoice.supplier)} → ${esc(c.invoice.customer)}</div>
+            <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;">Synthèse Pièce</div>
+            <div style="font-size:17px;font-weight:700;margin:6px 0;color:var(--black);">${esc(c.invoice.supplier)} → ${esc(c.invoice.customer)}</div>
             <div>Montant HT : <strong>${c.invoice.amount_ht.toLocaleString("fr-FR")} €</strong> | TVA : <strong>${(c.invoice.vat_rate*100).toFixed(0)}%</strong></div>
             <div>Date prestation : <strong>${esc(c.invoice.service_date)}</strong> | GL Période : <strong>${esc(c.invoice.ledger_entry.period)}</strong></div>
           </div>
-          <div class="card">
-            <div style="font-size:11px;color:var(--muted);">SCORE DE CONFIANCE</div>
-            <div style="font-size:26px;font-weight:700;margin:4px 0;">${c.confidence_score}/100 ${scoreBadge(c)}</div>
-            <div style="font-size:12px;">${esc(c.auditor_explanation)}</div>
+          <div class="card" style="background:var(--black);color:#fff;">
+            <div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;">Score de Confiance</div>
+            <div style="font-size:28px;font-weight:700;margin:6px 0;">${c.confidence_score}/100 ${scoreBadge(c)}</div>
+            <div style="font-size:12px;color:#d0d0ce;">${esc(c.auditor_explanation)}</div>
           </div>
         </div>
         ${gate2Box}
         ${gate3Box}
-        <div class="card" style="padding:0;">
+        <div class="card" style="padding:0;overflow:hidden;">
           <table>
             <thead><tr><th>Règle</th><th>Statut</th><th>Résumé</th><th>Action</th></tr></thead>
             <tbody>${rulesHtml}</tbody>
@@ -788,7 +865,6 @@
       } catch (e) { alert(e.message); }
     };
 
-    // PREUVES
     document.getElementById("toggleCompareBtn").addEventListener("click", () => {
       state.compareMode = !state.compareMode;
       renderPreuves(currentCase());
@@ -875,7 +951,6 @@
         </div>`;
     }
 
-    // EXPERTS (GATE 4)
     function renderExperts(c) {
       const el = document.getElementById("expertsBody");
       if (!c) { el.innerHTML = ""; return; }
@@ -888,14 +963,14 @@
         const canAnswer = c.status === "GATE3_APPROVED" || c.status === "EXPERTS_ANSWERED";
         return `
           <div class="card">
-            <h3>${esc(b.role)} — ${esc(b.title)}</h3>
+            <h3 style="margin-top:0;">${esc(b.role)} — ${esc(b.title)}</h3>
             <p>${esc(b.context_summary)}</p>
             <p><strong>${esc(b.question)}</strong></p>
-            <input type="text" id="expComment_${b.role}" placeholder="Commentaire expert..." value="${esc(existing?.comment || "")}" style="margin-bottom:8px;" />
+            <input type="text" id="expComment_${b.role}" placeholder="Commentaire expert..." value="${esc(existing?.comment || "")}" style="margin-bottom:10px;" />
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
               ${b.options.map(opt => `<button class="btn ${existing?.decision === opt ? "" : "btn-outline"}" ${canAnswer ? "" : "disabled"} onclick="submitGate4('${esc(c.case_id)}', '${esc(b.role)}', '${esc(opt)}')">${esc(opt)}</button>`).join("")}
             </div>
-            ${existing ? `<div style="margin-top:8px;font-size:11px;color:var(--green-hover);">Répondu : <strong>${esc(existing.decision)}</strong> (${esc(existing.responder)})</div>` : ""}
+            ${existing ? `<div style="margin-top:10px;font-size:11px;color:var(--green-hover);font-weight:700;">Répondu : ${esc(existing.decision)} (${esc(existing.responder)})</div>` : ""}
           </div>`;
       }).join("") + `</div>`;
     }
@@ -912,7 +987,6 @@
       } catch (e) { alert(e.message); }
     };
 
-    // VALIDATION (GATE 5)
     document.getElementById("bulkGate5Btn").addEventListener("click", () => {
       const c = currentCase();
       if (c) bulkApprove(c.tenant_id, "GATE_5");
@@ -928,10 +1002,10 @@
             <strong>Score final : ${c.confidence_score}/100 ${scoreBadge(c)}</strong>
             ${needsManager ? `<span class="badge badge-red">Score &lt; 40 : Rôle Manager obligatoire</span>` : `<span class="badge badge-green">Rôle Auditeur ou Manager</span>`}
           </div>
-          <label style="display:block;margin-top:10px;font-weight:700;">Conclusion :</label>
+          <label style="display:block;margin-top:12px;margin-bottom:6px;font-weight:700;">Conclusion :</label>
           <textarea id="g5Conclusion" rows="3">${esc(c.conclusion || c.recommendation)}</textarea>
-          <input type="text" id="g5Comment" placeholder="Commentaire de validation (obligatoire pour Edit ou Reject)..." style="margin-top:8px;" />
-          <div style="display:flex;gap:8px;margin-top:10px;">
+          <input type="text" id="g5Comment" placeholder="Commentaire de validation (obligatoire pour Edit ou Reject)..." style="margin-top:10px;" />
+          <div style="display:flex;gap:8px;margin-top:12px;">
             <button class="btn" ${c.status === "SYNTHESIS_DONE" ? "" : "disabled"} onclick="submitGate5('${esc(c.case_id)}', 'Approve')">Approve &amp; Générer Fiche</button>
             <button class="btn btn-amber" ${c.status === "SYNTHESIS_DONE" ? "" : "disabled"} onclick="submitGate5('${esc(c.case_id)}', 'Edit')">Edit &amp; Générer Fiche</button>
             <button class="btn btn-danger" ${c.status === "SYNTHESIS_DONE" ? "" : "disabled"} onclick="submitGate5('${esc(c.case_id)}', 'Reject')">Reject (Re-run SynthesisAgent)</button>
@@ -952,7 +1026,6 @@
       } catch (e) { alert(e.message); }
     };
 
-    // FICHE DE CONTROLE
     function renderFiche(c) {
       const el = document.getElementById("ficheContent");
       if (!c) { el.textContent = ""; return; }
@@ -971,7 +1044,6 @@
       if (c) window.open(`/api/cases/${encodeURIComponent(c.case_id)}/export/docx`, "_blank");
     });
 
-    // JOURNAL + FILTERS + DIFF MODAL
     ["fCase", "fActor", "fRole", "fGate", "fAction"].forEach(id =>
       document.getElementById(id).addEventListener("input", renderJournal)
     );
@@ -993,7 +1065,7 @@
 
     function renderJournal() {
       const list = filteredEvents().slice().reverse();
-      document.getElementById("journalBody").innerHTML = list.map((e, i) => `
+      document.getElementById("journalBody").innerHTML = list.map(e => `
         <tr class="clickable" onclick="openDiffModal('${esc(e.event_id)}')">
           <td>${esc(e.timestamp_utc.slice(0, 19))}</td>
           <td><span class="badge badge-gray">${esc(e.gate)}</span></td>
@@ -1039,7 +1111,6 @@
       await loadAll();
     });
 
-    // SSE Live Stream
     function connectSSE() {
       const es = new EventSource("/api/events/stream");
       const box = document.getElementById("liveLogStream");
