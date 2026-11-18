@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AuditBridge — 3-Min Interactive Demo (Deloitte × Google Cloud)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --card: #ffffff;
+      --black: #000000;
+      --green: #86bc25;
+      --green-dark: #26890d;
+      --green-soft: rgba(134, 188, 37, 0.14);
+      --text: #1d1d1f;
+      --muted: #6e6e73;
+      --border: rgba(0, 0, 0, 0.08);
+      --amber: #ed8b00;
+      --red: #da291c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Open Sans", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: 52px;
+    }
+
+    /* Apple-minimal Deloitte Header */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(0, 0, 0, 0.92);
+      backdrop-filter: blur(16px);
+      color: #fff;
+      padding: 12px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--green);
+    }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .wordmark { font-size: 19px; font-weight: 700; letter-spacing: -0.4px; display: flex; align-items: center; gap: 7px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); }
+    .pill-tag {
+      font-size: 11px;
+      font-weight: 600;
+      color: #d0d0ce;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+    .controls { display: flex; align-items: center; gap: 8px; }
+    .btn {
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      padding: 8px 16px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.2s ease;
+    }
+    .btn:hover { background: var(--green-dark); transform: scale(1.02); }
+    .btn-dark { background: rgba(255,255,255,0.12); color: #fff; }
+    .btn-dark:hover { background: rgba(255,255,255,0.22); }
+
+    .container { max-width: 1180px; margin: 0 auto; padding: 28px 24px; }
+
+    /* Hero Headline */
+    .hero { text-align: center; margin-bottom: 28px; }
+    .hero-eyebrow {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--green-dark);
+      margin-bottom: 6px;
+    }
+    .hero h1 {
+      margin: 0;
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.8px;
+      color: var(--black);
+    }
+    .hero p {
+      margin: 8px auto 0;
+      max-width: 680px;
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* Animated Pipeline Stage */
+    .stage-card {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 26px 28px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.06);
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .pipeline-wrap { position: relative; padding: 14px 0 22px; }
+    .track-line {
+      position: absolute;
+      top: 42px;
+      left: 6%;
+      right: 6%;
+      height: 3px;
+      background: #e5e5ea;
+      border-radius: 3px;
+      z-index: 1;
+    }
+    .track-progress {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--green), var(--green-dark));
+      border-radius: 3px;
+      transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+      position: relative;
+    }
+    .packet {
+      position: absolute;
+      right: -7px;
+      top: -5px;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 5px rgba(134, 188, 37, 0.25), 0 0 14px var(--green);
+      animation: pulsePacket 1.4s infinite;
+    }
+    @keyframes pulsePacket {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.25); }
+    }
+
+    .nodes {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+      position: relative;
+      z-index: 2;
+    }
+    .node {
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.25s ease;
+    }
+    .node:hover { transform: translateY(-2px); }
+    .node-circle {
+      width: 54px;
+      height: 54px;
+      margin: 0 auto 10px;
+      border-radius: 16px;
+      background: #f5f5f7;
+      border: 2px solid #e5e5ea;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .node.done .node-circle {
+      background: var(--green-soft);
+      border-color: var(--green);
+      color: var(--green-dark);
+    }
+    .node.active .node-circle {
+      background: var(--black);
+      border-color: var(--green);
+      color: #fff;
+      transform: scale(1.1);
+      box-shadow: 0 8px 20px rgba(134, 188, 37, 0.28);
+    }
+    .node-label { font-size: 12px; font-weight: 700; color: var(--black); }
+    .node-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* Live Agent Spotlight Panel */
+    .spotlight {
+      margin-top: 10px;
+      background: #fafafa;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 24px;
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      gap: 24px;
+      align-items: center;
+      min-height: 220px;
+      animation: fadeSlide 0.35s ease;
+    }
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .spot-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--green-dark);
+      background: var(--green-soft);
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+    }
+    .spot-title { font-size: 20px; font-weight: 700; margin: 0 0 8px; color: var(--black); letter-spacing: -0.3px; }
+    .spot-desc { font-size: 13px; color: var(--muted); line-height: 1.6; margin: 0 0 12px; }
+    .spot-talk {
+      font-size: 12px;
+      color: var(--black);
+      background: #fff;
+      border-left: 3px solid var(--green);
+      padding: 10px 12px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+
+    .spot-visual {
+      background: var(--black);
+      color: #fff;
+      border-radius: 12px;
+      padding: 16px 18px;
+      font-size: 12px;
+      line-height: 1.55;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.14);
+    }
+    .vis-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .vis-row:last-child { border-bottom: none; }
+    .pill {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .p-green { background: rgba(134,188,37,0.22); color: var(--green); }
+    .p-red { background: rgba(218,41,28,0.25); color: #ff6b61; }
+    .p-amber { background: rgba(237,139,0,0.25); color: #ffb347; }
+
+    /* Apple Bento Grid for the 3 Groups */
+    .bento {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .bento-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+      transition: transform 0.2s ease;
+    }
+    .bento-card:hover { transform: translateY(-2px); }
+    .bento-card.dark { background: var(--black); color: #fff; }
+    .bento-num { font-size: 11px; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: 0.6px; }
+    .bento-title { font-size: 16px; font-weight: 700; margin: 4px 0 10px; }
+    .bento-list { margin: 0; padding-left: 16px; font-size: 12px; line-height: 1.6; color: var(--muted); }
+    .bento-card.dark .bento-list { color: #d0d0ce; }
+
+    footer {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--black); color: #97999b; text-align: center;
+      padding: 8px 16px; font-size: 11px; border-top: 1px solid #222;
+    }
+    @media (max-width: 900px) {
+      .nodes, .spotlight, .bento { grid-template-columns: 1fr; }
+      .track-line { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="wordmark">AuditBridge <span class="dot"></span></div>
+      <span class="pill-tag">Démo 3 min • Deloitte × Google Cloud</span>
+    </div>
+    <div class="controls">
+      <a href="/" class="btn btn-dark" style="text-decoration:none;">← App Live</a>
+      <span class="pill-tag" id="timerBadge">0:30 / étape</span>
+      <button class="btn btn-dark" id="prevBtn">← Précédent</button>
+      <button class="btn" id="playBtn">▶ Lecture Auto</button>
+      <button class="btn btn-dark" id="nextBtn">Suivant →</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <div class="hero-eyebrow">Contrôle des Prestations &amp; Transactions Complexes</div>
+      <h1>De la facture brute à la Fiche de Contrôle certifiée.</h1>
+      <p>Chaque agent spécialisé travaille sous un harnais gouverné (ADK), avec masquage des données, preuves tracées et 5 points de validation humaine.</p>
+    </div>
+
+    <!-- ANIMATED PIPELINE + AGENT SPOTLIGHT -->
+    <div class="stage-card">
+      <div class="pipeline-wrap">
+        <div class="track-line"><div class="track-progress" id="trackProgress"><div class="packet"></div></div></div>
+        <div class="nodes" id="nodesRow">
+          <div class="node active" data-i="0">
+            <div class="node-circle">G1</div>
+            <div class="node-label">Gate 1 Cyber</div>
+            <div class="node-sub">Passeport + DLP</div>
+          </div>
+          <div class="node" data-i="1">
+            <div class="node-circle">A1</div>
+            <div class="node-label">AuditorAgent</div>
+            <div class="node-sub">Règles + Skeptic</div>
+          </div>
+          <div class="node" data-i="2">
+            <div class="node-circle">G2</div>
+            <div class="node-label">Gate 2</div>
+            <div class="node-sub">Revue Auditeur</div>
+          </div>
+          <div class="node" data-i="3">
+            <div class="node-circle">A2</div>
+            <div class="node-label">Bridge + G3</div>
+            <div class="node-sub">Briefs + Anti-fuite</div>
+          </div>
+          <div class="node" data-i="4">
+            <div class="node-circle">G4</div>
+            <div class="node-label">Experts</div>
+            <div class="node-sub">Avocat &amp; Consultant</div>
+          </div>
+          <div class="node" data-i="5">
+            <div class="node-circle">G5</div>
+            <div class="node-label">Synthèse &amp; Fiche</div>
+            <div class="node-sub">Score + SHA-256</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="spotlight" id="spotlightBox"></div>
+    </div>
+
+    <!-- 3-GROUP APPLE BENTO -->
+    <div class="bento">
+      <div class="bento-card">
+        <div class="bento-num">Groupe 1 — Inputs &amp; Multi-Clients</div>
+        <div class="bento-title">Normaliser chaque client sans code spécifique</div>
+        <ul class="bento-list">
+          <li><strong>Passeports Clients</strong> : IFRS vs PCG, seuils d'approbation, entités groupe.</li>
+          <li><strong>JSON Canonique</strong> : CSV ERP, Grand Livre et factures PDF/TXT unifiés.</li>
+          <li><strong>3 Cas Démo</strong> : Normal (32 k€), Inter-compagnie (2 M€), Injection (Quarantaine).</li>
+        </ul>
+      </div>
+      <div class="bento-card">
+        <div class="bento-num">Groupe 2 — Agents IA &amp; Métiers</div>
+        <div class="bento-title">Des agents déterministes, jamais boîtes noires</div>
+        <ul class="bento-list">
+          <li><strong>AuditorAgent</strong> : 5 règles Python + explication Gemini + Skeptic Check.</li>
+          <li><strong>BridgeAgent</strong> : traduit l'anomalie en Micro-Briefs Avocat &amp; Consultant.</li>
+          <li><strong>SynthesisAgent</strong> : calcule le score de confiance (0–100) et la recommandation.</li>
+        </ul>
+      </div>
+      <div class="bento-card dark">
+        <div class="bento-num">Groupe 3 — Infra GCP &amp; 5 Human Gates</div>
+        <div class="bento-title">Sécurisé, stateless et auditable</div>
+        <ul class="bento-list">
+          <li><strong>Pare-feu Gate 1</strong> : Model Armor, isolation <code>tenant_id</code>, masquage DLP.</li>
+          <li><strong>5 Human Gates</strong> : pause après chaque agent (Manager requis si score &lt; 40).</li>
+          <li><strong>Cloud Run + Firestore + BigQuery</strong> : chaîne <strong>SHA-256</strong> vérifiable en direct.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <footer>Brouillon généré par IA — validation humaine requise — données fictives</footer>
+
+  <script>
+    const STEPS = [
+      {
+        tag: "Étape 1 / 6 — Groupe 1 & Gate 1 (0:00 – 0:30)",
+        title: "Pare-feu Cyber & Normalisation par Passeport",
+        desc: "Avant qu'un LLM ne lise quoi que ce soit, Gate 1 isole le client, bloque les injections de prompt via Model Armor, masque les IBAN/emails/noms et mappe la facture en JSON canonique.",
+        talk: "Message clé oral : « La sécurité commence dès l'ingestion : la facture empoisonnée est stoppée en Quarantaine avant même d'atteindre Gemini. »",
+        visual: `
+          <div class="vis-row"><span>facture_poison.txt</span><span class="pill p-red">BLOQUÉ — Prompt Injection</span></div>
+          <div class="vis-row"><span>IBAN LU2800194006...</span><span class="pill p-green">Masqué [IBAN_8c41]</span></div>
+          <div class="vis-row"><span>Passeport CLIENT_B.json</span><span class="pill p-green">Clôture 2026-12-31 • Seuil 100k€</span></div>
+          <div class="vis-row"><span>Statut Pipeline</span><span class="pill p-green">SECURITY_CHECKED</span></div>
+        `
+      },
+      {
+        tag: "Étape 2 / 6 — Groupe 2 : AuditorAgent (0:30 – 1:00)",
+        title: "AuditorAgent + Skeptic Check (Preuves Obligatoires)",
+        desc: "L'agent exécute 5 règles déterministes en Python. Gemini rédige l'explication métier, puis le Skeptic Check rejette tout constat sans preuve Input + Réglementation/Passeport.",
+        talk: "Message clé oral : « Zéro hallucination : chaque anomalie pointe vers la ligne exacte de la facture et l'article réglementaire. »",
+        visual: `
+          <div class="vis-row"><span>CUT_OFF (2027-01 vs 2026-12)</span><span class="pill p-red">ANOMALIE (-20)</span></div>
+          <div class="vis-row"><span>TVA B2B (0% sans mention)</span><span class="pill p-red">ANOMALIE (-20)</span></div>
+          <div class="vis-row"><span>INTERCOMPAGNIE &amp; SEUIL (2 M€)</span><span class="pill p-red">ANOMALIE (-40)</span></div>
+          <div class="vis-row"><span>Skeptic Check</span><span class="pill p-green">100% Preuves vérifiées</span></div>
+        `
+      },
+      {
+        tag: "Étape 3 / 6 — Gate 2 : Auditeur (1:00 – 1:30)",
+        title: "Pause Humaine : L'Auditeur valide le périmètre",
+        desc: "Le harness ADK met le dossier en pause (AUDITOR_AGENT_DONE). Dans le Visualiseur de preuves, l'auditeur vérifie les surlignages, peut éditer le périmètre ou rejeter pour relancer l'agent.",
+        talk: "Message clé oral : « L'IA propose, l'auditeur garde le contrôle total du périmètre avant toute consultation externe. »",
+        visual: `
+          <div class="vis-row"><span>Statut Dossier</span><span class="pill p-amber">PAUSE — AUDITOR_AGENT_DONE</span></div>
+          <div class="vis-row"><span>Visualiseur Preuves</span><span class="pill p-green">Mode Comparer actif</span></div>
+          <div class="vis-row"><span>Action Auditeur</span><span class="pill p-green">Approve / Edit / Reject</span></div>
+          <div class="vis-row"><span>Dossiers verts (CLIENT_A)</span><span class="pill p-green">Bulk Approve autorisé</span></div>
+        `
+      },
+      {
+        tag: "Étape 4 / 6 — BridgeAgent & Gate 3 (1:30 – 2:00)",
+        title: "Micro-Briefs Traduits + Contrôle Anti-Fuite PII",
+        desc: "BridgeAgent rédige deux questions fermées adaptées à chaque métier (Avocat Tax & Legal et Consultant). Gate 3 permet à l'auditeur d'éditer les briefs et vérifie qu'aucune PII n'est exposée.",
+        talk: "Message clé oral : « Plus d'emails de 3 pages : chaque expert reçoit une question claire, sans fuite de données client. »",
+        visual: `
+          <div class="vis-row"><span>Brief Avocat Tax &amp; Legal</span><span class="pill p-green">TVA 0% &amp; Autoliquidation</span></div>
+          <div class="vis-row"><span>Brief Consultant</span><span class="pill p-green">Prestation livrée en 2026 ?</span></div>
+          <div class="vis-row"><span>Vérification DLP Gate 3</span><span class="pill p-green">0 PII détectée</span></div>
+          <div class="vis-row"><span>Statut Pipeline</span><span class="pill p-green">GATE3_APPROVED</span></div>
+        `
+      },
+      {
+        tag: "Étape 5 / 6 — Gate 4 : Experts (2:00 – 2:30)",
+        title: "Réponses Horodatées : Avocat & Consultant",
+        desc: "Les experts se connectent avec leur rôle, consultent uniquement le brief approuvé et répondent en un clic avec commentaire. Dès les 2 réponses reçues, SynthesisAgent s'exécute.",
+        talk: "Message clé oral : « Les réponses métiers réveillent automatiquement le workflow et alimentent le scoring final. »",
+        visual: `
+          <div class="vis-row"><span>Avocat (me.martin@deloitte)</span><span class="pill p-red">Non conforme (-30 pts)</span></div>
+          <div class="vis-row"><span>Consultant (ops@deloitte)</span><span class="pill p-red">Livré en 2027 (-30 pts)</span></div>
+          <div class="vis-row"><span>SynthesisAgent</span><span class="pill p-red">Score calculé : 0 / 100</span></div>
+          <div class="vis-row"><span>Statut Pipeline</span><span class="pill p-amber">PAUSE — SYNTHESIS_DONE</span></div>
+        `
+      },
+      {
+        tag: "Étape 6 / 6 — Gate 5 & SHA-256 (2:30 – 3:00)",
+        title: "Escalade Manager, Fiche de Contrôle & Journal Intègre",
+        desc: "Score < 40 : le système bloque l'Auditeur et exige le rôle Manager. Après approbation Gate 5, la Fiche .docx/.md est générée avec la piste d'audit complète et la chaîne SHA-256 vérifiée.",
+        talk: "Message clé oral : « Chaque action humaine et IA est chaînée par SHA-256 dans Firestore & BigQuery : traçabilité absolue. »",
+        visual: `
+          <div class="vis-row"><span>Contrôle Rôle (Score &lt; 40)</span><span class="pill p-green">Validé par Manager</span></div>
+          <div class="vis-row"><span>Export Fiche de Contrôle</span><span class="pill p-green">.DOCX &amp; .MD générés</span></div>
+          <div class="vis-row"><span>Vérification Chaîne SHA-256</span><span class="pill p-green">Journal intègre ✓</span></div>
+          <div class="vis-row"><span>Statut Final</span><span class="pill p-green">DOCUMENTED</span></div>
+        `
+      }
+    ];
+
+    let cur = 0;
+    let timer = null;
+
+    function render(idx) {
+      cur = (idx + STEPS.length) % STEPS.length;
+      const pct = (cur / (STEPS.length - 1)) * 100;
+      document.getElementById("trackProgress").style.width = `${pct}%`;
+
+      document.querySelectorAll(".node").forEach((n, i) => {
+        n.classList.toggle("active", i === cur);
+        n.classList.toggle("done", i < cur);
+      });
+
+      const s = STEPS[cur];
+      const box = document.getElementById("spotlightBox");
+      box.style.animation = "none";
+      box.offsetHeight;
+      box.style.animation = "fadeSlide 0.35s ease";
+      box.innerHTML = `
+        <div>
+          <span class="spot-tag">${s.tag}</span>
+          <h2 class="spot-title">${s.title}</h2>
+          <p class="spot-desc">${s.desc}</p>
+          <div class="spot-talk">${s.talk}</div>
+        </div>
+        <div class="spot-visual">${s.visual}</div>
+      `;
+    }
+
+    function togglePlay() {
+      const btn = document.getElementById("playBtn");
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+        btn.textContent = "▶ Lecture Auto";
+      } else {
+        btn.textContent = "⏸ Pause";
+        timer = setInterval(() => render(cur + 1), 4000);
+      }
+    }
+
+    document.getElementById("nextBtn").addEventListener("click", () => render(cur + 1));
+    document.getElementById("prevBtn").addEventListener("click", () => render(cur - 1));
+    document.getElementById("playBtn").addEventListener("click", togglePlay);
+    document.querySelectorAll(".node").forEach(n => n.addEventListener("click", () => render(Number(n.dataset.i))));
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight") render(cur + 1);
+      if (e.key === "ArrowLeft") render(cur - 1);
+      if (e.key === " ") { e.preventDefault(); togglePlay(); }
+    });
+
+    render(0);
+  </script>
+</body>
+</html>

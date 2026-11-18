@@ -33,6 +33,7 @@ from app.data.audit_logger import audit_logger
 from app.data.normalizer import DATA_ROOT, Gate1BlockError, load_passport, normalize_csv_file, normalize_txt_file
 
 _STATIC_INDEX = Path(__file__).parent / "static" / "index.html"
+_STATIC_PRESENTATION = Path(__file__).parent / "static" / "presentation.html"
 _QUARANTINE_LOCATORS: dict[str, dict[str, Any]] = {}
 
 
@@ -163,6 +164,11 @@ app = FastAPI(title="AuditBridge — Deloitte x Google Cloud", version="3.0.0", 
 @app.get("/", response_class=HTMLResponse)
 async def serve_ui() -> HTMLResponse:
     return HTMLResponse(_STATIC_INDEX.read_text(encoding="utf-8"))
+
+
+@app.get("/presentation", response_class=HTMLResponse)
+async def serve_presentation() -> HTMLResponse:
+    return HTMLResponse(_STATIC_PRESENTATION.read_text(encoding="utf-8"))
 
 
 @app.get("/health")
