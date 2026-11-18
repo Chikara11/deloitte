@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deloitte × Google Cloud — Zero-Trust M&amp;A Forensic War Room</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased">
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="h-8 w-8 rounded-lg bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center font-bold text-emerald-400">D</div>
+      <div>
+        <h1 class="text-sm font-bold tracking-wide text-white">ZERO-TRUST M&amp;A FORENSIC WAR ROOM</h1>
+        <p class="text-xs text-slate-400">Deal: <span class="font-mono text-emerald-400">nova_logistics_2025</span> (€200M Acquisition) • GCP ADK + Model Armor + Cloud DLP</p>
+      </div>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 text-xs">
+      <button onclick="loadSample(false)" class="px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 font-medium">1. Load Clean Data Room</button>
+      <button onclick="loadSample(true)" class="px-3 py-1.5 rounded-md bg-rose-950/70 hover:bg-rose-900/70 border border-rose-700 text-rose-200 font-medium">2. Drop Poisoned PDF</button>
+      <button onclick="runAnalyze()" class="px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-semibold">3. Run ADK Swarm</button>
+      <button onclick="runIamProbe()" class="px-3 py-1.5 rounded-md bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/50 text-amber-300 font-medium">IAM 403 Probe</button>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- Left Column: Business War Room -->
+    <section class="lg:col-span-7 space-y-4">
+      <!-- Upload + Status Banner -->
+      <div class="rounded-xl bg-slate-900 border border-slate-800 p-4 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <div class="text-xs uppercase tracking-wider text-slate-400">Deal Risk Verdict</div>
+          <div id="deal-status" class="text-xl font-bold text-slate-200 mt-0.5">Awaiting Ingestion</div>
+        </div>
+        <div class="text-right">
+          <div class="text-xs uppercase tracking-wider text-slate-400">Adjusted Valuation (Price Chip)</div>
+          <div id="adjusted-price" class="text-xl font-mono font-bold text-emerald-400 mt-0.5">€200,000,000</div>
+        </div>
+      </div>
+
+      <!-- Drag & Drop / File Upload -->
+      <div class="rounded-xl bg-slate-900/60 border border-dashed border-slate-700 p-3 flex items-center justify-between gap-3 text-xs">
+        <span class="text-slate-400">Upload custom PDF or CSV into GCS Quarantine Shield:</span>
+        <input id="file-input" type="file" accept=".pdf,.csv" onchange="uploadSelectedFile()" class="text-slate-300 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700" />
+      </div>
+
+      <!-- Verified Findings -->
+      <div class="rounded-xl bg-slate-900 border border-slate-800 p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold text-white">Skeptic-Verified Deal Breakers</h2>
+          <button id="break-glass-btn" onclick="breakGlassUnmask()" disabled class="px-3 py-1 rounded bg-indigo-600 disabled:opacity-40 hover:bg-indigo-500 text-xs font-semibold text-white">Partner Break-Glass Unmask</button>
+        </div>
+        <div id="findings-list" class="space-y-2.5 text-xs text-slate-400">Run analysis to inspect verified findings.</div>
+      </div>
+
+      <!-- Entity Graph + Price Chips -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="rounded-xl bg-slate-900 border border-slate-800 p-4 space-y-2">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Forensic Entity Graph (Tokenized)</h3>
+          <div id="entity-graph" class="space-y-1.5 text-xs text-slate-400">No graph edges yet.</div>
+        </div>
+        <div class="rounded-xl bg-slate-900 border border-slate-800 p-4 space-y-2">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">M&amp;A Price Chip Breakdown</h3>
+          <div id="price-chips" class="space-y-1.5 text-xs text-slate-400">No valuation adjustments yet.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Security & Governance HUD -->
+    <aside class="lg:col-span-5 rounded-xl bg-slate-900 border border-slate-800 p-4 flex flex-col h-[78vh]">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div>
+          <h2 class="text-sm font-bold text-white">Live Security &amp; Governance HUD</h2>
+          <p class="text-xs text-slate-400">Model Armor • Cloud DLP • IAM 403s • Skeptic Audit</p>
+        </div>
+        <span class="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-xs font-mono">SSE LIVE</span>
+      </div>
+      <div id="hud-feed" class="mt-3 flex-1 overflow-y-auto space-y-2 pr-1 font-mono text-xs"></div>
+    </aside>
+  </main>
+
+  <script>
+    const DEAL_ID = "nova_logistics_2025";
+    const hud = document.getElementById("hud-feed");
+
+    function appendHud(evt) {
+      const color = evt.severity === "CRITICAL"
+        ? "border-rose-700/80 bg-rose-950/40 text-rose-200"
+        : evt.severity === "WARNING"
+        ? "border-amber-700/80 bg-amber-950/40 text-amber-200"
+        : "border-slate-800 bg-slate-950/70 text-slate-300";
+
+      const div = document.createElement("div");
+      div.className = `rounded-lg border p-2.5 ${color}`;
+      div.innerHTML = `
+        <div class="flex items-center justify-between gap-2 mb-1">
+          <span class="font-bold">[${evt.event_type}]</span>
+          <span class="text-slate-400">${evt.agent_name}</span>
+        </div>
+        <div class="text-[11px] opacity-90 break-words">${JSON.stringify(evt.details)}</div>
+      `;
+      hud.prepend(div);
+    }
+
+    const sse = new EventSource(`/api/deals/${DEAL_ID}/events`);
+    sse.addEventListener("audit", (e) => appendHud(JSON.parse(e.data)));
+
+    async function loadSample(includePoisoned) {
+      hud.innerHTML = "";
+      await fetch(`/api/deals/${DEAL_ID}/load-sample?include_poisoned=${includePoisoned}`, { method: "POST" });
+      await runAnalyze();
+    }
+
+    async function uploadSelectedFile() {
+      const input = document.getElementById("file-input");
+      if (!input.files.length) return;
+      const fd = new FormData();
+      fd.append("file", input.files[0]);
+      await fetch(`/api/deals/${DEAL_ID}/upload`, { method: "POST", body: fd });
+      await runAnalyze();
+    }
+
+    async function runAnalyze() {
+      const res = await fetch(`/api/deals/${DEAL_ID}/analyze`, { method: "POST" });
+      const report = await res.json();
+      renderReport(report);
+    }
+
+    async function runIamProbe() {
+      await fetch(`/api/security/iam-probe?deal_id=${DEAL_ID}`, { method: "POST" });
+    }
+
+    async function breakGlassUnmask() {
+      const res = await fetch(`/api/deals/${DEAL_ID}/break-glass`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ partner_id: "partner.ma@deloitte.fr", reason: "Final Investment Committee Sign-Off" })
+      });
+      const data = await res.json();
+      renderReport(data.report);
+    }
+
+    function renderReport(r) {
+      const statusEl = document.getElementById("deal-status");
+      statusEl.textContent = r.deal_status.replaceAll("_", " ");
+      statusEl.className = r.deal_status === "CRITICAL_WALK_AWAY"
+        ? "text-xl font-bold text-rose-400 mt-0.5"
+        : "text-xl font-bold text-amber-300 mt-0.5";
+
+      document.getElementById("adjusted-price").textContent =
+        `€${Number(r.adjusted_price_eur).toLocaleString()} (Chip: €${Number(r.total_price_chip_eur).toLocaleString()})`;
+
+      document.getElementById("break-glass-btn").disabled = r.pii_unmasked;
+
+      const fl = document.getElementById("findings-list");
+      fl.innerHTML = r.findings.map(f => `
+        <div class="rounded-lg border border-slate-800 bg-slate-950/70 p-3 space-y-1">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-bold text-white">${f.finding_id} • ${f.title}</span>
+            <span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-mono">${f.severity}</span>
+          </div>
+          <p class="text-slate-300">${f.summary}</p>
+          <div class="text-[11px] font-mono text-emerald-400">✓ ${f.verification_note}</div>
+        </div>
+      `).join("");
+
+      const eg = document.getElementById("entity-graph");
+      eg.innerHTML = r.entity_graph.edges.length
+        ? r.entity_graph.edges.map(e => `
+            <div class="p-2 rounded bg-slate-950 border border-slate-800 font-mono">
+              <span class="text-indigo-300">${e.source}</span>
+              <span class="text-slate-500"> —[${e.relation}]→ </span>
+              <span class="text-amber-300">${e.target}</span>
+            </div>
+          `).join("")
+        : "No cross-document IBAN collisions detected.";
+
+      const pc = document.getElementById("price-chips");
+      pc.innerHTML = r.price_chips.map(c => `
+        <div class="p-2 rounded bg-slate-950 border border-slate-800">
+          <div class="flex justify-between font-semibold text-slate-200">
+            <span>${c.rule_name}</span>
+            <span class="font-mono text-rose-400">€${Number(c.impact_eur).toLocaleString()}</span>
+          </div>
+          <div class="text-slate-400 mt-0.5">${c.action}</div>
+        </div>
+      `).join("");
+    }
+  </script>
+</body>
+</html>
