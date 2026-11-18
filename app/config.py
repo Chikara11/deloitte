@@ -13,6 +13,8 @@ class Settings(BaseSettings):
 
     bq_dataset: str = "war_room"
     bq_audit_table: str = "audit_logs"
+    gcs_bucket: str = "auditbridge-docs-deloitteinnov26par-598"
+    gcs_quarantine_bucket: str = "war-room-quarantine-deloitteinnov26par-598"
 
     gemini_fast_model: str = "gemini-2.5-flash"
     gemini_pro_model: str = "gemini-2.5-pro"

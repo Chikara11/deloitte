@@ -31,6 +31,7 @@ from app.agents.harness import (
 from app.agents.models import AuditCase, CanonicalInvoice, LedgerEntry
 from app.data.audit_logger import audit_logger
 from app.data.normalizer import DATA_ROOT, Gate1BlockError, load_passport, normalize_csv_file, normalize_txt_file
+from app.data.storage import doc_store
 
 _STATIC_INDEX = Path(__file__).parent / "static" / "index.html"
 _STATIC_PRESENTATION = Path(__file__).parent / "static" / "presentation.html"
@@ -127,6 +128,7 @@ def _ingest_path(tenant_id: str, path: Path) -> list[AuditCase]:
             quarantine_raw_text=raw_text,
         )
         _QUARANTINE_LOCATORS[cid] = {"file": rel, "locator": exc.locator, "reason": exc.reason}
+        doc_store.quarantine_document(rel, raw_text.encode("utf-8"))
         audit_logger.record_event(
             session_id=sid,
             tenant_id=tenant_id,
@@ -196,12 +198,14 @@ async def list_cases(tenant_id: str | None = None) -> list[dict[str, Any]]:
 @app.post("/api/tenants/{tenant_id}/upload")
 async def upload_input(tenant_id: str, file: UploadFile = File(...)) -> dict[str, Any]:
     name = Path(file.filename or "uploaded.txt").name
+    content = await file.read()
+    gcs_uri = doc_store.save_document(f"inputs/{tenant_id}/{name}", content)
     dest_dir = DATA_ROOT / "inputs" / tenant_id
     dest_dir.mkdir(parents=True, exist_ok=True)
     dest = dest_dir / name
-    dest.write_bytes(await file.read())
+    dest.write_bytes(content)
     created = _ingest_path(tenant_id, dest)
-    return {"cases": [c.model_dump() for c in created]}
+    return {"gcs_uri": gcs_uri, "cases": [c.model_dump() for c in created]}
 
 
 def _get_case_or_404(case_id: str) -> AuditCase:
@@ -405,13 +409,12 @@ async def stream_events() -> EventSourceResponse:
 
 @app.get("/api/files")
 async def read_source_file(path: str = Query(..., description="Relative path inside data/")) -> dict[str, Any]:
-    repo_root = DATA_ROOT.parent.resolve()
-    target = (repo_root / path).resolve()
-    if not str(target).startswith(str(DATA_ROOT.resolve())) or not target.exists():
-        raise HTTPException(status_code=404, detail="File not found")
+    try:
+        raw = doc_store.read_document(path)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="File not found") from exc
 
-    raw = target.read_text(encoding="utf-8")
-    ext = target.suffix.lower()
+    ext = Path(path).suffix.lower()
     if ext == ".csv":
         rows = list(csv.reader(io.StringIO(raw)))
         return {"path": path, "kind": "csv", "headers": rows[0] if rows else [], "rows": rows[1:] if len(rows) > 1 else []}

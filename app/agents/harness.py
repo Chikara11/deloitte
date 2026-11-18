@@ -16,6 +16,32 @@ from app.config import settings
 from app.data.audit_logger import audit_logger
 from app.security.gate1 import check_model_armor, server_vault
 
+try:
+    from google.adk.agents import LlmAgent
+
+    ADK_AVAILABLE = True
+except Exception:  # pragma: no cover
+    LlmAgent = None  # type: ignore[assignment,misc]
+    ADK_AVAILABLE = False
+
+ADK_AGENTS: dict[str, Any] = {}
+if ADK_AVAILABLE and LlmAgent is not None:
+    ADK_AGENTS["AuditorAgent"] = LlmAgent(
+        name="AuditorAgent",
+        model=settings.gemini_fast_model,
+        description="Deterministic financial audit rules + Gemini explanation under Skeptic evidence check.",
+    )
+    ADK_AGENTS["BridgeAgent"] = LlmAgent(
+        name="BridgeAgent",
+        model=settings.gemini_fast_model,
+        description="Drafts micro-briefs for Tax & Legal Lawyer and Operational Consultant.",
+    )
+    ADK_AGENTS["SynthesisAgent"] = LlmAgent(
+        name="SynthesisAgent",
+        model=settings.gemini_pro_model,
+        description="Aggregates rules + expert answers into confidence score and recommendation.",
+    )
+
 AGENT_TOOL_ALLOWLIST: dict[str, set[str]] = {
     "AuditorAgent": {"run_deterministic_audit", "explain_findings_llm"},
     "BridgeAgent": {"draft_micro_briefs"},
