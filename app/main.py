@@ -256,6 +256,22 @@ async def run_iam_probe(tenant_id: str = "CLIENT_B") -> dict[str, Any]:
     return res.__dict__
 
 
+@app.get("/api/tenants/{tenant_id}/audit/verify")
+async def verify_audit_chain(tenant_id: str, simulate_tamper: bool = False) -> dict[str, Any]:
+    """Governance: recompute the SHA-256 hash chain of the tenant's audit trail."""
+    _require_tenant(tenant_id)
+    res = audit_logger.verify(tenant_id, simulate_tamper=simulate_tamper)
+    if not simulate_tamper:
+        audit_logger.log(
+            tenant_id,
+            "governance",
+            "AUDIT_CHAIN_VERIFIED" if res["valid"] else "AUDIT_CHAIN_BROKEN",
+            "INFO" if res["valid"] else "CRITICAL",
+            {"events_checked": res["events_checked"], "broken_at": res["broken_at"]},
+        )
+    return res
+
+
 @app.get("/api/tenants/{tenant_id}/events")
 async def stream_events(tenant_id: str) -> EventSourceResponse:
     _require_tenant(tenant_id)

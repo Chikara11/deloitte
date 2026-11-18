@@ -27,7 +27,10 @@ gsutil mb -p "${PROJECT_ID}" -l "${REGION}" "gs://${BUCKET}" || true
 # 3. Create BigQuery Dataset & Audit Table
 bq --location="${REGION}" mk -d "${PROJECT_ID}:${DATASET}" || true
 bq mk --table "${PROJECT_ID}:${DATASET}.audit_logs" \
-  event_id:STRING,timestamp:TIMESTAMP,deal_id:STRING,agent_name:STRING,event_type:STRING,severity:STRING,details_json:STRING || true
+  event_id:STRING,timestamp:TIMESTAMP,deal_id:STRING,agent_name:STRING,event_type:STRING,severity:STRING,details_json:STRING,prev_hash:STRING,hash:STRING || true
+# Existing tables: add the hash-chain columns (no-op if already present)
+bq query --use_legacy_sql=false --project_id="${PROJECT_ID}" \
+  "ALTER TABLE \`${PROJECT_ID}.${DATASET}.audit_logs\` ADD COLUMN IF NOT EXISTS prev_hash STRING, ADD COLUMN IF NOT EXISTS hash STRING" || true
 
 # 4. Create 3 Least-Privilege Service Accounts
 for SA in sa-legal sa-quant sa-forensic; do

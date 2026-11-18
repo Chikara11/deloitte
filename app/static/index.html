@@ -27,6 +27,8 @@
       <button onclick="loadDemo('poisoned')" class="px-3 py-1.5 rounded-md bg-rose-700/80 hover:bg-rose-600 text-white font-medium">🛡️ Cas 3 : PDF Piégé</button>
       <button onclick="testIsolation()" class="px-2.5 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200">Test Isolation</button>
       <button onclick="runIamProbe()" class="px-2.5 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300">IAM 403</button>
+      <button onclick="verifyChain(false)" class="px-2.5 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-300">🔗 Intégrité logs</button>
+      <button onclick="verifyChain(true)" class="px-2.5 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-rose-300">Simuler falsification</button>
     </div>
   </header>
 
@@ -150,6 +152,14 @@
 
     async function runIamProbe() {
       await fetch(`/api/security/iam-probe?tenant_id=${currentTenant}`, { method: "POST" });
+    }
+
+    async function verifyChain(simulate) {
+      const res = await fetch(`/api/tenants/${currentTenant}/audit/verify?simulate_tamper=${simulate}`);
+      const r = await res.json();
+      document.getElementById("status-banner").textContent = r.valid
+        ? `🔗 Chaîne de logs intègre : ${r.events_checked} événements, empreinte ${String(r.head_hash).slice(0, 12)}…`
+        : `⛔ Falsification détectée à l'événement ${r.broken_at} (${r.broken_index + 1}/${r.events_checked})${simulate ? " — simulation sur une copie" : ""}`;
     }
 
     async function uploadCustomFile() {

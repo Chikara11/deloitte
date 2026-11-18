@@ -148,3 +148,36 @@ def test_upload_rejects_disguised_or_oversized_files() -> None:
     assert exe.status_code == 415
     big = client.post("/api/tenants/CLIENT_B/upload", files={"file": ("big.pdf", b"%PDF" + b"0" * (5 * 1024 * 1024), "application/pdf")})
     assert big.status_code == 413
+
+
+def test_audit_log_hash_chain_detects_tampering() -> None:
+    from app.data.audit_logger import AuditLogger, verify_chain
+
+    log = AuditLogger()
+    for i in range(4):
+        log.log("CLIENT_B", "gate2_avocat", "EXPERT_GATE2_RESPONSE", "INFO", {"decision": "Non conforme", "i": i})
+    log.log("CLIENT_A", "gate1_cyber", "GATE1_PASS", "INFO", {})
+    events = log.list_events("CLIENT_B")
+    assert verify_chain(events)["valid"] is True
+
+    # Modifying one past decision breaks the chain at that exact event
+    forged = [e.model_copy(deep=True) for e in events]
+    forged[1].details["decision"] = "Conforme"
+    res = verify_chain(forged)
+    assert res["valid"] is False and res["broken_at"] == events[1].event_id
+
+    # Deleting an event also breaks it
+    assert verify_chain([events[0], events[2], events[3]])["valid"] is False
+
+    # Simulation is non-destructive: the real chain stays valid
+    assert log.verify("CLIENT_B", simulate_tamper=True)["valid"] is False
+    assert log.verify("CLIENT_B")["valid"] is True
+
+
+def test_audit_verify_endpoint() -> None:
+    client = TestClient(app)
+    client.post("/api/tenants/CLIENT_B/load-demo?case_type=interco")
+    ok = client.get("/api/tenants/CLIENT_B/audit/verify").json()
+    assert ok["valid"] is True and ok["events_checked"] > 0
+    assert client.get("/api/tenants/CLIENT_B/audit/verify?simulate_tamper=true").json()["valid"] is False
+    assert client.get("/api/tenants/CLIENT_B/audit/verify").json()["valid"] is True
