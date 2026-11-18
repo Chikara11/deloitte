@@ -91,6 +91,12 @@
     let activeTab = "AUDITEUR";
     let sse = null;
 
+    // Security: every value coming from a client document is escaped before touching innerHTML (anti-XSS)
+    function esc(v) {
+      return String(v ?? "").replace(/[&<>"'`]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "`": "&#96;" }[ch]));
+    }
+    const tenantHeaders = () => ({ "Content-Type": "application/json", "X-Tenant-Id": currentTenant });
+
     function connectSSE() {
       if (sse) sse.close();
       sse = new EventSource(`/api/tenants/${currentTenant}/events`);
@@ -106,7 +112,7 @@
         : "border-slate-800 bg-slate-950/70 text-slate-300";
       const d = document.createElement("div");
       d.className = `rounded-lg border p-2.5 ${cls}`;
-      d.innerHTML = `<div class="flex justify-between font-bold mb-1"><span>[${evt.event_type}]</span><span class="text-slate-400">${evt.agent_name}</span></div><div class="text-[11px] break-words opacity-90">${JSON.stringify(evt.details)}</div>`;
+      d.innerHTML = `<div class="flex justify-between font-bold mb-1"><span>[${esc(evt.event_type)}]</span><span class="text-slate-400">${esc(evt.agent_name)}</span></div><div class="text-[11px] break-words opacity-90">${esc(JSON.stringify(evt.details))}</div>`;
       hud.prepend(d);
     }
 
@@ -154,10 +160,12 @@
       const fd = new FormData();
       fd.append("file", file);
       const res = await fetch(`/api/tenants/${currentTenant}/upload`, { method: "POST", body: fd });
-      if (res.status === 403) {
+      if (!res.ok) {
         const err = await res.json();
-        document.getElementById("status-banner").textContent = `🛡️ BLOQUÉ GATE 1 (${err.detail.event_type})`;
-        document.getElementById("fiche-preview").textContent = `# QUARANTAINE GATE 1 — ${file.name}\n\n- **Raison :** ${err.detail.reason}`;
+        const d = typeof err.detail === "object" ? err.detail : { event_type: `HTTP_${res.status}`, reason: err.detail };
+        document.getElementById("status-banner").textContent = `🛡️ BLOQUÉ GATE 1 (${d.event_type})`;
+        document.getElementById("fiche-preview").textContent = `# QUARANTAINE GATE 1 — ${file.name}\n\n- **Raison :** ${d.reason}`;
+        input.value = "";
         return;
       }
       const data = await res.json();
@@ -187,9 +195,9 @@
       list.innerHTML = cases.map(c => {
         const icon = c.status === "QUARANTINE" ? "🛡️" : (c.status === "ANOMALIE" || c.score_color === "RED" ? "⚠️" : "✅");
         const active = c.case_id === selectedCaseId ? "border-emerald-500 bg-slate-950" : "border-slate-800 bg-slate-950/50";
-        return `<button onclick="selectCase('${c.case_id}')" class="w-full text-left rounded-lg border p-2.5 flex items-center justify-between ${active}">
-          <div><span class="font-bold text-white">${icon} ${c.invoice.invoice_id}</span> <span class="text-slate-400">(${c.invoice.source_file})</span><div class="text-[11px] text-slate-400">${c.invoice.supplier} → ${c.invoice.customer}</div></div>
-          <div class="text-right font-mono"><div class="text-white font-bold">${Number(c.invoice.amount_ht).toLocaleString()} €</div><div class="text-[11px]">${c.status} (${c.confidence_score}/100)</div></div>
+        return `<button data-cid="${esc(c.case_id)}" onclick="selectCase(this.dataset.cid)" class="w-full text-left rounded-lg border p-2.5 flex items-center justify-between ${active}">
+          <div><span class="font-bold text-white">${icon} ${esc(c.invoice.invoice_id)}</span> <span class="text-slate-400">(${esc(c.invoice.source_file)})</span><div class="text-[11px] text-slate-400">${esc(c.invoice.supplier)} → ${esc(c.invoice.customer)}</div></div>
+          <div class="text-right font-mono"><div class="text-white font-bold">${Number(c.invoice.amount_ht).toLocaleString()} €</div><div class="text-[11px]">${esc(c.status)} (${Number(c.confidence_score)}/100)</div></div>
         </button>`;
       }).join("");
       renderRolePanel();
@@ -210,16 +218,16 @@
 
       const panel = document.getElementById("role-panel");
       if (c.status === "QUARANTINE") {
-        panel.innerHTML = `<div class="p-3 rounded-lg bg-rose-950/50 border border-rose-700 text-rose-200 font-semibold">${c.recommendation}</div>`;
+        panel.innerHTML = `<div class="p-3 rounded-lg bg-rose-950/50 border border-rose-700 text-rose-200 font-semibold">${esc(c.recommendation)}</div>`;
         return;
       }
 
       if (activeTab === "AUDITEUR") {
-        const rulesHtml = c.rules.map(r => `<div class="flex justify-between p-2 rounded bg-slate-950 border border-slate-800"><span>${r.passed ? "✅" : "❌"} <b>${r.rule_id}</b> — ${r.evidence}</span></div>`).join("");
+        const rulesHtml = c.rules.map(r => `<div class="flex justify-between p-2 rounded bg-slate-950 border border-slate-800"><span>${r.passed ? "✅" : "❌"} <b>${esc(r.rule_id)}</b> — ${esc(r.evidence)}</span></div>`).join("");
         panel.innerHTML = `
-          <div class="p-2.5 rounded bg-slate-950 border border-slate-800 text-slate-200">${c.auditor_explanation}</div>
+          <div class="p-2.5 rounded bg-slate-950 border border-slate-800 text-slate-200">${esc(c.auditor_explanation)}</div>
           <div class="space-y-1.5">${rulesHtml}</div>
-          <div class="p-2.5 rounded bg-slate-950 border border-slate-700"><b>Recommandation Synthèse :</b> ${c.recommendation}</div>
+          <div class="p-2.5 rounded bg-slate-950 border border-slate-700"><b>Recommandation Synthèse :</b> ${esc(c.recommendation)}</div>
           <div class="flex gap-2 pt-1">
             <button onclick="sendGate3('VALIDER')" class="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold">Gate 3 : Valider Conclusion</button>
             <button onclick="sendGate3('REJETER')" class="px-3 py-1.5 rounded bg-rose-700 hover:bg-rose-600 text-white font-semibold">Gate 3 : Rejeter</button>
@@ -227,20 +235,20 @@
       } else {
         const brief = c.micro_briefs.find(b => b.role === activeTab);
         if (!brief) {
-          panel.innerHTML = `<div class="p-3 rounded bg-emerald-950/40 border border-emerald-700 text-emerald-200">Aucune anomalie — aucun Micro-Brief requis pour ${activeTab}.</div>`;
+          panel.innerHTML = `<div class="p-3 rounded bg-emerald-950/40 border border-emerald-700 text-emerald-200">Aucune anomalie — aucun Micro-Brief requis pour ${esc(activeTab)}.</div>`;
           return;
         }
         const existing = c.expert_responses[activeTab];
-        const btns = brief.options.map(opt => `<button onclick="sendGate2('${activeTab}', '${opt}')" class="px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">${opt}</button>`).join("");
+        const btns = brief.options.map(opt => `<button data-opt="${esc(opt)}" onclick="sendGate2(activeTab, this.dataset.opt)" class="px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">${esc(opt)}</button>`).join("");
         panel.innerHTML = `
           <div class="p-3 rounded-lg bg-slate-950 border border-slate-800 space-y-1.5">
-            <div class="font-bold text-white">${brief.title}</div>
-            <p class="text-slate-300">${brief.context_summary}</p>
-            <div class="text-amber-300 font-semibold pt-1">${brief.question}</div>
+            <div class="font-bold text-white">${esc(brief.title)}</div>
+            <p class="text-slate-300">${esc(brief.context_summary)}</p>
+            <div class="text-amber-300 font-semibold pt-1">${esc(brief.question)}</div>
           </div>
           <input id="expert-comment" placeholder="Commentaire expert (optionnel)..." class="w-full px-3 py-1.5 rounded bg-slate-950 border border-slate-700 text-white" />
           <div class="flex flex-wrap gap-2">${btns}</div>
-          ${existing ? `<div class="text-emerald-400 font-mono">✓ Réponse enregistrée : ${existing.decision} (${existing.timestamp})</div>` : ""}`;
+          ${existing ? `<div class="text-emerald-400 font-mono">✓ Réponse enregistrée : ${esc(existing.decision)} (${esc(existing.timestamp)})</div>` : ""}`;
       }
     }
 
@@ -248,28 +256,38 @@
       const comment = document.getElementById("expert-comment")?.value || "";
       const res = await fetch(`/api/cases/${encodeURIComponent(selectedCaseId)}/gate2`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: tenantHeaders(),
         body: JSON.stringify({ role, decision, comment, responder_id: `${role.toLowerCase()}@deloitte.fr` })
       });
+      if (!res.ok) return showGateError(res);
       const updated = await res.json();
       cases = cases.map(x => x.case_id === updated.case_id ? updated : x);
+      document.getElementById("status-banner").textContent = `✅ Gate 2 : réponse ${role} enregistrée`;
       renderAll();
     }
 
     async function sendGate3(decision) {
       const res = await fetch(`/api/cases/${encodeURIComponent(selectedCaseId)}/gate3`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: tenantHeaders(),
         body: JSON.stringify({ decision, auditor_id: "auditeur.senior@deloitte.fr" })
       });
+      if (!res.ok) return showGateError(res);
       const updated = await res.json();
       cases = cases.map(x => x.case_id === updated.case_id ? updated : x);
+      document.getElementById("status-banner").textContent = `✅ Gate 3 : conclusion ${decision} signée`;
       renderAll();
+    }
+
+    async function showGateError(res) {
+      let msg = `HTTP ${res.status}`;
+      try { const e = await res.json(); msg = typeof e.detail === "string" ? e.detail : JSON.stringify(e.detail); } catch (_) {}
+      document.getElementById("status-banner").textContent = `⛔ ${msg}`;
     }
 
     function exportFiche() {
       if (!selectedCaseId) return;
-      window.open(`/api/cases/${encodeURIComponent(selectedCaseId)}/fiche`, "_blank");
+      window.open(`/api/cases/${encodeURIComponent(selectedCaseId)}/fiche?tenant=${encodeURIComponent(currentTenant)}`, "_blank");
     }
 
     connectSSE();

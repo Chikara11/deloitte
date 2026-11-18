@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
@@ -38,6 +38,36 @@ class Gate3Request(BaseModel):
     decision: str  # VALIDER | REJETER
     auditor_id: str = "auditeur.senior@deloitte.fr"
     comment: str = ""
+
+
+_MAX_UPLOAD_BYTES = 5 * 1024 * 1024
+_ALLOWED_EXT = (".pdf", ".csv")
+_GATE2_ROLES = ("AVOCAT", "CONSULTANT")
+_GATE3_DECISIONS = ("VALIDER", "REJETER")
+
+
+def _require_tenant(tenant_id: str) -> None:
+    """Gate 1: refuse any tenant without a Client Passport (no implicit tenants)."""
+    if tenant_id not in PASSPORTS:
+        audit_logger.log(tenant_id, "gate1_cyber", "UNKNOWN_TENANT_BLOCK", "CRITICAL", {"tenant_id": tenant_id})
+        raise HTTPException(status_code=404, detail=f"Unknown tenant '{tenant_id}'.")
+
+
+def _get_case_for_tenant(case_id: str, x_tenant_id: str) -> AuditCase:
+    """Zero-Trust: a case is only reachable by the tenant that owns it (X-Tenant-Id header)."""
+    case = _CASES.get(case_id)
+    if case is None:
+        raise HTTPException(status_code=404, detail="Case not found")
+    if x_tenant_id != case.tenant_id:
+        audit_logger.log(
+            case.tenant_id,
+            "gate1_cyber",
+            "TENANT_ISOLATION_BLOCK",
+            "CRITICAL",
+            {"case_id": case_id, "caller_tenant": x_tenant_id, "owner_tenant": case.tenant_id},
+        )
+        raise HTTPException(status_code=403, detail="Tenant isolation: this case belongs to another client.")
+    return case
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -99,6 +129,7 @@ def _ingest_and_evaluate(tenant_id: str, path: Path) -> list[AuditCase]:
 @app.post("/api/tenants/{tenant_id}/load-demo")
 async def load_demo(tenant_id: str, case_type: str = "all") -> dict[str, Any]:
     """Generate and run demo cases (normal | interco | poisoned | all)."""
+    _require_tenant(tenant_id)
     files = {p.name: p for p in generate_demo_files(_SAMPLE_DIR)}
     # Clear previous cases for this tenant
     for k in [cid for cid, c in _CASES.items() if c.tenant_id == tenant_id]:
@@ -123,8 +154,20 @@ async def load_demo(tenant_id: str, case_type: str = "all") -> dict[str, Any]:
 
 @app.post("/api/tenants/{tenant_id}/upload")
 async def upload_invoice(tenant_id: str, file: UploadFile = File(...)) -> dict[str, Any]:
-    data = await file.read()
-    name = file.filename or "facture.pdf"
+    _require_tenant(tenant_id)
+    name = Path(file.filename or "facture.pdf").name
+    data = await file.read(_MAX_UPLOAD_BYTES + 1)
+
+    def _reject(status: int, reason: str) -> HTTPException:
+        audit_logger.log(tenant_id, "gate1_cyber", "UPLOAD_REJECTED", "WARNING", {"source_file": name, "reason": reason})
+        return HTTPException(status_code=status, detail={"event_type": "UPLOAD_REJECTED", "reason": reason})
+
+    if len(data) > _MAX_UPLOAD_BYTES:
+        raise _reject(413, "Fichier > 5 Mo refusé.")
+    if not name.lower().endswith(_ALLOWED_EXT):
+        raise _reject(415, "Seuls les fichiers .pdf et .csv sont acceptés.")
+    if name.lower().endswith(".pdf") and not data.startswith(b"%PDF"):
+        raise _reject(415, "Signature PDF invalide (fichier déguisé).")
     try:
         invs = (
             ingest_csv_to_canonical(tenant_id, name, data)
@@ -139,11 +182,14 @@ async def upload_invoice(tenant_id: str, file: UploadFile = File(...)) -> dict[s
         return {"tenant_id": tenant_id, "cases": cases}
     except QuarantineError as qerr:
         raise HTTPException(status_code=403, detail={"event_type": qerr.event_type, "reason": qerr.reason})
+    except (ValueError, UnicodeDecodeError, KeyError) as exc:
+        raise _reject(422, f"Document illisible ou non conforme au Passeport Client : {type(exc).__name__}")
 
 
 @app.post("/api/tenants/{tenant_id}/test-isolation")
 async def test_tenant_isolation(tenant_id: str) -> dict[str, Any]:
     """Intentionally feed a CLIENT_A file into CLIENT_B to prove Gate 1 isolation."""
+    _require_tenant(tenant_id)
     files = {p.name: p for p in generate_demo_files(_SAMPLE_DIR)}
     wrong_file = files["CLIENT_A_export_erp.csv"] if tenant_id == "CLIENT_B" else files["CLIENT_B_facture_0412.pdf"]
     cases = _ingest_and_evaluate(tenant_id, wrong_file)
@@ -152,34 +198,48 @@ async def test_tenant_isolation(tenant_id: str) -> dict[str, Any]:
 
 @app.get("/api/tenants/{tenant_id}/cases")
 async def list_cases(tenant_id: str) -> list[dict[str, Any]]:
+    _require_tenant(tenant_id)
     return [c.model_dump() for c in _CASES.values() if c.tenant_id == tenant_id]
 
 
 @app.post("/api/cases/{case_id:path}/gate2")
-async def submit_gate2(case_id: str, req: Gate2Request) -> dict[str, Any]:
-    case = _CASES.get(case_id)
-    if case is None:
-        raise HTTPException(status_code=404, detail="Case not found")
+async def submit_gate2(case_id: str, req: Gate2Request, x_tenant_id: str = Header(...)) -> dict[str, Any]:
+    case = _get_case_for_tenant(case_id, x_tenant_id)
+    role = req.role.upper()
+    if role not in _GATE2_ROLES:
+        raise HTTPException(status_code=422, detail=f"Role must be one of {_GATE2_ROLES}.")
+    if case.status != "ANOMALIE":
+        raise HTTPException(status_code=409, detail=f"Gate 2 not open for a case in status {case.status}.")
+    brief = next((b for b in case.micro_briefs if b.role == role), None)
+    if brief is None or req.decision not in brief.options:
+        raise HTTPException(status_code=422, detail=f"Decision must be one of {brief.options if brief else []}.")
     updated = apply_expert_response(case, req.role, req.decision, req.comment, req.responder_id)
     _CASES[case_id] = updated
     return updated.model_dump()
 
 
 @app.post("/api/cases/{case_id:path}/gate3")
-async def submit_gate3(case_id: str, req: Gate3Request) -> dict[str, Any]:
-    case = _CASES.get(case_id)
-    if case is None:
-        raise HTTPException(status_code=404, detail="Case not found")
+async def submit_gate3(case_id: str, req: Gate3Request, x_tenant_id: str = Header(...)) -> dict[str, Any]:
+    case = _get_case_for_tenant(case_id, x_tenant_id)
+    if req.decision.upper() not in _GATE3_DECISIONS:
+        raise HTTPException(status_code=422, detail=f"Decision must be one of {_GATE3_DECISIONS}.")
+    if case.status == "QUARANTINE":
+        raise HTTPException(status_code=409, detail="Document en quarantaine Gate 1 : aucune conclusion possible.")
+    if case.auditor_gate3 is not None:
+        raise HTTPException(status_code=409, detail="Gate 3 déjà signée : la conclusion est immuable.")
+    missing = [b.role for b in case.micro_briefs if b.role not in case.expert_responses]
+    if missing:
+        audit_logger.log(case.tenant_id, "gate3_auditeur", "GATE3_PREMATURE_BLOCK", "WARNING",
+                         {"invoice_id": case.invoice.invoice_id, "missing_experts": missing})
+        raise HTTPException(status_code=409, detail=f"Gate 2 incomplète : en attente de {', '.join(missing)}.")
     updated = apply_auditor_gate3(case, req.decision, req.auditor_id, req.comment)
     _CASES[case_id] = updated
     return updated.model_dump()
 
 
 @app.get("/api/cases/{case_id:path}/fiche", response_class=PlainTextResponse)
-async def export_fiche(case_id: str) -> PlainTextResponse:
-    case = _CASES.get(case_id)
-    if case is None:
-        raise HTTPException(status_code=404, detail="Case not found")
+async def export_fiche(case_id: str, tenant: str = "") -> PlainTextResponse:
+    case = _get_case_for_tenant(case_id, tenant)
     return PlainTextResponse(case.fiche_controle_md, media_type="text/markdown")
 
 
@@ -198,6 +258,7 @@ async def run_iam_probe(tenant_id: str = "CLIENT_B") -> dict[str, Any]:
 
 @app.get("/api/tenants/{tenant_id}/events")
 async def stream_events(tenant_id: str) -> EventSourceResponse:
+    _require_tenant(tenant_id)
     q = audit_logger.subscribe()
 
     async def event_gen():
