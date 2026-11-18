@@ -1,0 +1,2 @@
+tenant_id,invoice_id,account,amount,period
+CLIENT_A,FA-2026-0101,622600,32000,2026-11

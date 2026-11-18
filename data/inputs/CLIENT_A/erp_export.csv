@@ -1,0 +1,2 @@
+tenant_id,num_facture,fournisseur,client,intercompagnie,montant_ht,taux_tva,date_facture,date_prestation,libelle
+CLIENT_A,FA-2026-0101,Cabinet Conseil Externe (Marc Lefevre),Alpha Distribution SAS,false,32000,0.20,2026-11-12,2026-11-18,Assistance audit opérationnel entrepôt Lyon

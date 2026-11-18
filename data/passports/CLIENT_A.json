@@ -1,0 +1,20 @@
+{
+  "tenant_id": "CLIENT_A",
+  "client_name": "Alpha Distribution SAS (Fictional)",
+  "input_format": "csv",
+  "column_mapping": {
+    "num_facture": "invoice_id",
+    "fournisseur": "supplier",
+    "client": "customer",
+    "intercompagnie": "is_intercompany",
+    "montant_ht": "amount_ht",
+    "taux_tva": "vat_rate",
+    "date_facture": "invoice_date",
+    "date_prestation": "service_date",
+    "libelle": "description"
+  },
+  "vat_rate": 0.20,
+  "closing_date": "2026-12-31",
+  "approval_threshold": 50000,
+  "group_entities": ["Alpha Distribution SAS", "Alpha Logistique SARL"]
+}

@@ -4,306 +4,757 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AuditBridge — Deloitte × Google Cloud</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-950 text-slate-100 min-h-screen antialiased">
-  <!-- Header: Sélecteur de client + Cas de démo -->
-  <header class="border-b border-slate-800 bg-slate-900/90 px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-    <div class="flex items-center gap-3">
-      <div class="h-9 w-9 rounded-lg bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center font-bold text-emerald-400">AB</div>
-      <div>
-        <h1 class="text-sm font-bold text-white tracking-wide">AUDITBRIDGE — DELOITTE × GOOGLE CLOUD</h1>
-        <p class="text-xs text-slate-400">Contrôle des Prestations &amp; Transactions Complexes • 3 Gates • ADK + Model Armor + DLP</p>
-      </div>
-    </div>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --black: #000000;
+      --white: #FFFFFF;
+      --green: #86BC25;
+      --green-dark: #26890D;
+      --grey-dark: #53565A;
+      --grey-mid: #97999B;
+      --border: #D0D0CE;
+      --bg-soft: #F7F7F7;
+      --amber: #ED8B00;
+      --red: #DA291C;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Open Sans", Arial, sans-serif;
+      background: var(--white);
+      color: var(--black);
+      font-size: 13px;
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header {
+      background: var(--black);
+      color: var(--white);
+      height: 56px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid var(--green);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .wordmark { font-size: 18px; font-weight: 700; letter-spacing: -0.2px; display: flex; align-items: center; gap: 6px; }
+    .green-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; }
+    .subtitle { font-size: 12px; color: var(--grey-mid); border-left: 1px solid #333; padding-left: 12px; }
+    .header-controls { display: flex; align-items: center; gap: 12px; }
+    select, input, textarea {
+      font-family: inherit;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 10px;
+      background: var(--white);
+      color: var(--black);
+    }
+    header select { background: #1A1A1A; color: var(--white); border-color: #444; }
+    .btn {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 4px;
+      padding: 7px 14px;
+      border: 1px solid var(--border);
+      background: var(--white);
+      color: var(--black);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn:hover { background: var(--bg-soft); }
+    .btn-primary { background: var(--green); border-color: var(--green); color: var(--white); }
+    .btn-primary:hover { background: var(--green-dark); border-color: var(--green-dark); }
+    .btn-danger { background: var(--red); border-color: var(--red); color: var(--white); }
+    .btn-sm { padding: 4px 10px; font-size: 11px; }
 
-    <div class="flex flex-wrap items-center gap-2 text-xs">
-      <select id="tenant-select" onchange="switchTenant()" class="px-2.5 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-white font-semibold">
-        <option value="CLIENT_A">CLIENT_A (PCG • ERP CSV • Seuil 50k€)</option>
-        <option value="CLIENT_B" selected>CLIENT_B (IFRS • PDF + GL • Seuil 100k€)</option>
+    .workspace {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 200px 1fr 310px;
+      min-height: 0;
+    }
+    nav.left-nav {
+      border-right: 1px solid var(--border);
+      padding: 16px 0;
+      background: var(--white);
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      text-align: left;
+      padding: 10px 20px;
+      border: none;
+      border-left: 3px solid transparent;
+      background: transparent;
+      color: var(--grey-dark);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .nav-item:hover { background: var(--bg-soft); color: var(--black); }
+    .nav-item.active { border-left-color: var(--green); color: var(--black); background: #F4F9EB; }
+
+    main.content {
+      padding: 24px 28px;
+      overflow-y: auto;
+      background: var(--white);
+    }
+    aside.trust-panel {
+      border-left: 1px solid var(--border);
+      background: var(--bg-soft);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+    }
+    .panel-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--grey-dark); margin: 0 0 8px 0; }
+    .card { border: 1px solid var(--border); border-radius: 4px; background: var(--white); padding: 16px; margin-bottom: 16px; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1px solid transparent;
+    }
+    .badge-green { color: var(--green-dark); background: #EEF6E6; border-color: var(--green); }
+    .badge-amber { color: #9A5800; background: #FFF4E5; border-color: var(--amber); }
+    .badge-red { color: var(--red); background: #FDECEA; border-color: var(--red); }
+    .badge-grey { color: var(--grey-dark); background: var(--bg-soft); border-color: var(--border); }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    th { font-weight: 700; color: var(--grey-dark); background: var(--bg-soft); font-size: 11px; text-transform: uppercase; }
+    tr.selectable { cursor: pointer; }
+    tr.selectable:hover { background: #F9FBF5; }
+    tr.selected { background: #F1F7E6; }
+
+    /* Evidence Viewer */
+    .evidence-split { display: grid; grid-template-columns: 340px 1fr; gap: 16px; min-height: 460px; }
+    .evidence-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .ev-item {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      background: var(--white);
+    }
+    .ev-item:hover, .ev-item.active { border-color: var(--green); background: #F4F9EB; }
+    .file-viewer {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--white);
+      overflow: auto;
+      max-height: 500px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+    }
+    .code-line { display: flex; padding: 2px 10px; border-left: 3px solid transparent; }
+    .line-num { width: 38px; color: var(--grey-mid); user-select: none; flex-shrink: 0; }
+    .line-highlight {
+      background: rgba(134, 188, 37, 0.22);
+      border-left: 3px solid var(--red);
+      font-weight: 600;
+    }
+    .cell-highlight {
+      background: rgba(134, 188, 37, 0.25) !important;
+      border-left: 3px solid var(--red) !important;
+      font-weight: 700;
+    }
+
+    /* Trust panel metrics */
+    .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .metric-box { background: var(--white); border: 1px solid var(--border); border-radius: 4px; padding: 8px 10px; }
+    .metric-val { font-size: 16px; font-weight: 700; color: var(--black); }
+    .metric-lbl { font-size: 10px; color: var(--grey-dark); text-transform: uppercase; }
+    .quarantine-box { border: 1px solid var(--red); background: #FDECEA; border-radius: 4px; padding: 10px; }
+    .log-stream { flex: 1; overflow-y: auto; max-height: 280px; display: flex; flex-direction: column; gap: 6px; }
+    .log-entry { background: var(--white); border: 1px solid var(--border); border-radius: 4px; padding: 6px 8px; font-size: 11px; }
+    .log-entry.block { border-left: 3px solid var(--red); }
+
+    footer {
+      background: var(--bg-soft);
+      border-top: 1px solid var(--border);
+      padding: 8px 24px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--grey-dark);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="wordmark">AuditBridge<span class="green-dot"></span></div>
+      <div class="subtitle">Hackathon Deloitte × Google Cloud — Prototype</div>
+    </div>
+    <div class="header-controls">
+      <label style="font-size:11px;color:#97999B;">Client</label>
+      <select id="client-select" onchange="onFilterChange()">
+        <option value="ALL">Tous les clients</option>
+        <option value="CLIENT_A">CLIENT_A — Alpha Distribution (PCG)</option>
+        <option value="CLIENT_B">CLIENT_B — Nova Group Europe (IFRS)</option>
       </select>
-      <button onclick="loadDemo('normal')" class="px-3 py-1.5 rounded-md bg-emerald-700/80 hover:bg-emerald-600 text-white font-medium">✅ Cas 1 : Normal (A)</button>
-      <button onclick="loadDemo('interco')" class="px-3 py-1.5 rounded-md bg-amber-600/80 hover:bg-amber-500 text-white font-medium">⚠️ Cas 2 : Interco 2M€ (B)</button>
-      <button onclick="loadDemo('poisoned')" class="px-3 py-1.5 rounded-md bg-rose-700/80 hover:bg-rose-600 text-white font-medium">🛡️ Cas 3 : PDF Piégé</button>
-      <button onclick="testIsolation()" class="px-2.5 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200">Test Isolation</button>
-      <button onclick="runIamProbe()" class="px-2.5 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300">IAM 403</button>
+      <label style="font-size:11px;color:#97999B;">Rôle</label>
+      <select id="role-select" onchange="onRoleSelect()">
+        <option value="AUDITEUR">Auditeur Financier</option>
+        <option value="AVOCAT">Avocat Tax &amp; Legal</option>
+        <option value="CONSULTANT">Consultant</option>
+      </select>
+      <button class="btn btn-sm" onclick="reseedDemo()">Réinitialiser Démo</button>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto p-5 grid grid-cols-1 lg:grid-cols-12 gap-5">
-    <!-- Centre: Factures + Onglets par Rôle + Fiche de Contrôle -->
-    <section class="lg:col-span-7 space-y-4">
-      <!-- Barre Upload Custom (Gate 1 live) + Liste des factures -->
-      <div class="rounded-xl bg-slate-900/70 border border-dashed border-slate-700 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <span class="text-slate-300 font-medium">📥 Importer une facture PDF ou CSV (test Gate 1 en direct) :</span>
-        <input id="file-input" type="file" accept=".pdf,.csv" onchange="uploadCustomFile()" class="text-slate-300 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700" />
+  <div class="workspace">
+    <nav class="left-nav">
+      <button class="nav-item active" id="nav-dossiers" onclick="setTab('dossiers')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+        Dossiers
+      </button>
+      <button class="nav-item" id="nav-analyse" onclick="setTab('analyse')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Analyse
+      </button>
+      <button class="nav-item" id="nav-preuves" onclick="setTab('preuves')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Preuves
+      </button>
+      <button class="nav-item" id="nav-experts" onclick="setTab('experts')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        Experts
+      </button>
+      <button class="nav-item" id="nav-validation" onclick="setTab('validation')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Validation
+      </button>
+      <button class="nav-item" id="nav-fiche" onclick="setTab('fiche')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="13" y2="16"/></svg>
+        Fiche de contrôle
+      </button>
+      <button class="nav-item" id="nav-journal" onclick="setTab('journal')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Journal
+      </button>
+    </nav>
+
+    <main class="content" id="main-content"></main>
+
+    <aside class="trust-panel">
+      <div>
+        <h3 class="panel-title">Trust &amp; Governance</h3>
+        <div class="metric-grid">
+          <div class="metric-box"><div class="metric-val" id="m-tenant">Vérifié</div><div class="metric-lbl">Isolation Tenant</div></div>
+          <div class="metric-box"><div class="metric-val" id="m-pii">0</div><div class="metric-lbl">PII Masquées</div></div>
+          <div class="metric-box"><div class="metric-val" id="m-armor" style="color:var(--red);">0</div><div class="metric-lbl">Blocs Model Armor</div></div>
+          <div class="metric-box"><div class="metric-val" id="m-skeptic">0</div><div class="metric-lbl">Rejets Skeptic</div></div>
+        </div>
       </div>
 
-      <!-- Liste des factures -->
-      <div class="rounded-xl bg-slate-900 border border-slate-800 p-4 space-y-2.5">
-        <div class="flex items-center justify-between">
-          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Factures &amp; Pièces Normalisées (JSON Canonique)</h2>
-          <span id="status-banner" class="text-xs font-mono text-emerald-400">Prêt</span>
-        </div>
-        <div id="cases-list" class="space-y-2 text-xs text-slate-400">Cliquez sur un cas de démo ci-dessus pour démarrer.</div>
+      <div class="card" style="margin-bottom:0;padding:10px;">
+        <div class="metric-lbl">Étape Harness ADK</div>
+        <div id="m-step" style="font-weight:700;font-size:12px;color:var(--green-dark);margin-top:2px;">IDLE</div>
       </div>
 
-      <!-- Onglets par rôle (Gate 2 & Gate 3) -->
-      <div class="rounded-xl bg-slate-900 border border-slate-800 p-4 space-y-3">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-          <div class="flex gap-2 text-xs">
-            <button onclick="setTab('AUDITEUR')" id="tab-AUDITEUR" class="px-3 py-1.5 rounded font-semibold bg-emerald-600 text-white">🔎 Auditeur (Gate 3)</button>
-            <button onclick="setTab('AVOCAT')" id="tab-AVOCAT" class="px-3 py-1.5 rounded font-semibold bg-slate-800 text-slate-300">⚖️ Avocat Tax &amp; Legal (Gate 2)</button>
-            <button onclick="setTab('CONSULTANT')" id="tab-CONSULTANT" class="px-3 py-1.5 rounded font-semibold bg-slate-800 text-slate-300">💼 Consultant (Gate 2)</button>
-          </div>
-          <div id="score-badge" class="px-2.5 py-1 rounded font-mono text-xs font-bold bg-slate-800 text-slate-300">Score: --/100</div>
-        </div>
-        <div id="role-panel" class="text-xs text-slate-300 space-y-3">Sélectionnez une facture pour inspecter les règles ou valider.</div>
-      </div>
+      <div id="quarantine-container"></div>
 
-      <!-- Bas: Fiche de contrôle générée -->
-      <div class="rounded-xl bg-slate-900 border border-slate-800 p-4 space-y-2">
-        <div class="flex items-center justify-between">
-          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">📄 Fiche de Contrôle Documentée (Livrable Audit)</h2>
-          <button onclick="exportFiche()" class="px-3 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white">Exporter (.md)</button>
-        </div>
-        <pre id="fiche-preview" class="text-xs font-mono whitespace-pre-wrap bg-slate-950 border border-slate-800 rounded-lg p-3 max-h-64 overflow-y-auto text-slate-300">Aucune fiche générée.</pre>
-      </div>
-    </section>
-
-    <!-- Droite: Sécurité & Gouvernance en direct -->
-    <aside class="lg:col-span-5 rounded-xl bg-slate-900 border border-slate-800 p-4 flex flex-col h-[82vh]">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-        <div>
-          <h2 class="text-sm font-bold text-white">Sécurité &amp; Gouvernance en direct</h2>
-          <p class="text-xs text-slate-400">Tenant ID • Model Armor • DLP • Gates 2/3 • BigQuery</p>
-        </div>
-        <span class="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-xs font-mono">SSE LIVE</span>
-      </div>
-      <div id="hud-feed" class="mt-3 flex-1 overflow-y-auto space-y-2 pr-1 font-mono text-xs"></div>
-      <div class="mt-3 pt-3 border-t border-slate-800 space-y-1.5">
-        <div class="text-xs font-bold text-indigo-300">📚 Références Réglementaires Actives (Toujours Affichées)</div>
-        <div id="refs-box" class="max-h-36 overflow-y-auto space-y-1 text-[11px] text-slate-300"></div>
+      <div style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <h3 class="panel-title">Flux d'audit en direct</h3>
+        <div id="log-stream" class="log-stream"></div>
       </div>
     </aside>
-  </main>
+  </div>
+
+  <footer>Brouillon généré par IA — validation humaine requise — données fictives</footer>
 
   <script>
-    let currentTenant = "CLIENT_B";
-    let cases = [];
+    let allCases = [];
     let selectedCaseId = null;
-    let activeTab = "AUDITEUR";
-    let sse = null;
+    let activeTab = "dossiers";
+    let trustLogs = [];
+    let selectedEvidence = null;
+    let compareMode = false;
+    let expertTabRole = "AVOCAT";
 
-    function connectSSE() {
-      if (sse) sse.close();
-      sse = new EventSource(`/api/tenants/${currentTenant}/events`);
-      sse.addEventListener("audit", (e) => appendHud(JSON.parse(e.data)));
+    async function init() {
+      await refreshData();
+      const sse = new EventSource("/api/logs/stream");
+      sse.addEventListener("log", (e) => {
+        const evt = JSON.parse(e.data);
+        trustLogs.unshift(evt);
+        renderTrustPanel();
+      });
     }
 
-    function appendHud(evt) {
-      const hud = document.getElementById("hud-feed");
-      const cls = evt.severity === "CRITICAL"
-        ? "border-rose-700 bg-rose-950/50 text-rose-200"
-        : evt.severity === "WARNING"
-        ? "border-amber-700 bg-amber-950/40 text-amber-200"
-        : "border-slate-800 bg-slate-950/70 text-slate-300";
-      const d = document.createElement("div");
-      d.className = `rounded-lg border p-2.5 ${cls}`;
-      d.innerHTML = `<div class="flex justify-between font-bold mb-1"><span>[${evt.event_type}]</span><span class="text-slate-400">${evt.agent_name}</span></div><div class="text-[11px] break-words opacity-90">${JSON.stringify(evt.details)}</div>`;
-      hud.prepend(d);
-    }
-
-    function switchTenant() {
-      currentTenant = document.getElementById("tenant-select").value;
-      document.getElementById("hud-feed").innerHTML = "";
-      function renderRefs(refs) {
-      const box = document.getElementById("refs-box");
-      box.innerHTML = refs.map(r => `<div class="p-1.5 rounded bg-slate-950 border border-slate-800"><span class="font-bold text-indigo-300">[${r.framework}] ${r.citation}</span> — <span class="text-slate-400">${r.summary}</span></div>`).join("");
-    }
-
-    async function loadBaseRefs() {
-      const res = await fetch("/api/governance/references");
-      const data = await res.json();
-      renderRefs([...data.platform, ...Object.values(data.rules)]);
-    }
-
-    connectSSE();
-    loadBaseRefs();
-    }
-
-    async function loadDemo(caseType) {
-      if (caseType === "normal") {
-        document.getElementById("tenant-select").value = "CLIENT_A";
-      } else {
-        document.getElementById("tenant-select").value = "CLIENT_B";
+    async function refreshData() {
+      const [cRes, tRes] = await Promise.all([fetch("/api/cases"), fetch("/api/trust")]);
+      allCases = await cRes.json();
+      const tData = await tRes.json();
+      trustLogs = (tData.logs || []).slice().reverse();
+      if (!selectedCaseId || !allCases.find(c => c.case_id === selectedCaseId)) {
+        const preferred = allCases.find(c => c.status === "Anomalie") || allCases[0];
+        selectedCaseId = preferred ? preferred.case_id : null;
       }
-      switchTenant();
-      document.getElementById("status-banner").textContent = "⏳ Gate 1 + Agents en cours...";
-      const res = await fetch(`/api/tenants/${currentTenant}/load-demo?case_type=${caseType}`, { method: "POST" });
-      const data = await res.json();
-      cases = data.cases;
-      selectedCaseId = cases[0]?.case_id || null;
-      document.getElementById("status-banner").textContent = `${cases.length} dossier(s) traité(s)`;
-      renderAll();
+      renderTrustMetrics(tData.metrics);
+      renderTrustPanel();
+      renderMain();
     }
 
-    async function testIsolation() {
-      document.getElementById("status-banner").textContent = "⏳ Test isolation multi-client...";
-      const res = await fetch(`/api/tenants/${currentTenant}/test-isolation`, { method: "POST" });
-      const data = await res.json();
-      cases = [...cases, ...data.cases];
-      selectedCaseId = data.cases[0]?.case_id || selectedCaseId;
-      document.getElementById("status-banner").textContent = "🛡️ Isolation vérifiée";
-      renderAll();
+    function renderTrustMetrics(m) {
+      document.getElementById("m-tenant").textContent = m.tenant_verified ? "Vérifié" : "Alerte";
+      document.getElementById("m-pii").textContent = m.pii_masked_count;
+      document.getElementById("m-armor").textContent = m.model_armor_blocks;
+      document.getElementById("m-skeptic").textContent = m.skeptic_rejections;
+      document.getElementById("m-step").textContent = m.current_harness_step;
     }
 
-    async function runIamProbe() {
-      await fetch(`/api/security/iam-probe?tenant_id=${currentTenant}`, { method: "POST" });
+    function renderTrustPanel() {
+      const qCases = allCases.filter(c => c.status === "Quarantaine");
+      const qBox = document.getElementById("quarantine-container");
+      qBox.innerHTML = qCases.map(q => `
+        <div class="quarantine-box" style="margin-bottom:8px;">
+          <div style="font-weight:700;color:var(--red);font-size:12px;">Fichier en Quarantaine</div>
+          <div style="font-size:11px;margin:4px 0;">${q.invoice.source_file}</div>
+          <button class="btn btn-danger btn-sm" onclick="examineQuarantine('${q.case_id}')">Examiner</button>
+        </div>
+      `).join("");
+
+      const stream = document.getElementById("log-stream");
+      stream.innerHTML = trustLogs.slice(0, 25).map(l => `
+        <div class="log-entry ${l.verdict === 'BLOCK' || l.verdict === 'REJECT' ? 'block' : ''}">
+          <div style="display:flex;justify-content:space-between;font-weight:700;">
+            <span>${l.action}</span>
+            <span style="color:var(--grey-dark);">${l.agent}</span>
+          </div>
+          <div style="color:var(--grey-dark);font-size:10px;">${l.tenant_id} • ${l.verdict}</div>
+        </div>
+      `).join("");
     }
 
-    async function uploadCustomFile() {
-      const input = document.getElementById("file-input");
-      if (!input.files.length) return;
-      const file = input.files[0];
-      document.getElementById("status-banner").textContent = `⏳ Gate 1 scan : ${file.name}...`;
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch(`/api/tenants/${currentTenant}/upload`, { method: "POST", body: fd });
-      if (res.status === 403) {
-        const err = await res.json();
-        document.getElementById("status-banner").textContent = `🛡️ BLOQUÉ GATE 1 (${err.detail.event_type})`;
-        document.getElementById("fiche-preview").textContent = `# QUARANTAINE GATE 1 — ${file.name}\n\n- **Raison :** ${err.detail.reason}`;
-        return;
-      }
-      const data = await res.json();
-      cases = [...data.cases, ...cases];
-      selectedCaseId = data.cases[0]?.case_id || selectedCaseId;
-      document.getElementById("status-banner").textContent = `✅ ${file.name} analysé`;
-      renderAll();
+    function getFilteredCases() {
+      const f = document.getElementById("client-select").value;
+      return f === "ALL" ? allCases : allCases.filter(c => c.tenant_id === f);
+    }
+
+    function getSelectedCase() {
+      return allCases.find(c => c.case_id === selectedCaseId) || null;
     }
 
     function setTab(tab) {
       activeTab = tab;
-      ["AUDITEUR", "AVOCAT", "CONSULTANT"].forEach(t => {
-        document.getElementById(`tab-${t}`).className = t === tab
-          ? "px-3 py-1.5 rounded font-semibold bg-emerald-600 text-white"
-          : "px-3 py-1.5 rounded font-semibold bg-slate-800 text-slate-300";
-      });
-      renderRolePanel();
+      document.querySelectorAll(".nav-item").forEach(b => b.classList.remove("active"));
+      document.getElementById(`nav-${tab}`).classList.add("active");
+      renderMain();
+    }
+
+    function onFilterChange() {
+      const list = getFilteredCases();
+      if (list.length && !list.find(c => c.case_id === selectedCaseId)) {
+        selectedCaseId = list[0].case_id;
+      }
+      renderMain();
+    }
+
+    function onRoleSelect() {
+      const r = document.getElementById("role-select").value;
+      if (r === "AVOCAT" || r === "CONSULTANT") {
+        expertTabRole = r;
+        setTab("experts");
+      } else {
+        setTab("validation");
+      }
+    }
+
+    function statusBadge(c) {
+      if (c.status === "Quarantaine" || c.status === "Rejeté") return `<span class="badge badge-red">${c.status}</span>`;
+      if (c.status === "Anomalie") return `<span class="badge badge-amber">${c.status}</span>`;
+      return `<span class="badge badge-green">${c.status}</span>`;
+    }
+
+    function scoreBadge(c) {
+      const cls = c.score_color === "green" ? "badge-green" : (c.score_color === "amber" ? "badge-amber" : "badge-red");
+      return `<span class="badge ${cls}">${c.confidence_score}/100</span>`;
+    }
+
+    function renderMain() {
+      const el = document.getElementById("main-content");
+      if (activeTab === "dossiers") renderDossiers(el);
+      else if (activeTab === "analyse") renderAnalyse(el);
+      else if (activeTab === "preuves") renderPreuves(el);
+      else if (activeTab === "experts") renderExperts(el);
+      else if (activeTab === "validation") renderValidation(el);
+      else if (activeTab === "fiche") renderFiche(el);
+      else if (activeTab === "journal") renderJournal(el);
+    }
+
+    function renderDossiers(el) {
+      const list = getFilteredCases();
+      el.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div>
+            <h2 style="margin:0;font-size:18px;">Dossiers de contrôle</h2>
+            <p style="margin:2px 0 0;color:var(--grey-dark);">Sélectionnez une facture pour analyser les règles, preuves et validations.</p>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="file" id="upload-file" accept=".txt,.csv" onchange="uploadFile()" />
+          </div>
+        </div>
+        <div class="card" style="padding:0;">
+          <table>
+            <thead><tr><th>Facture</th><th>Client</th><th>Fournisseur</th><th>Montant HT</th><th>Statut</th><th>Score</th><th>Dernière action</th></tr></thead>
+            <tbody>
+              ${list.map(c => `
+                <tr class="selectable ${c.case_id === selectedCaseId ? 'selected' : ''}" onclick="selectCase('${c.case_id}')">
+                  <td><strong>${c.invoice.invoice_id}</strong><div style="font-size:11px;color:var(--grey-dark);">${c.invoice.source_file}</div></td>
+                  <td>${c.tenant_id}</td>
+                  <td>${c.invoice.supplier}</td>
+                  <td style="font-family:monospace;">${Number(c.invoice.amount_ht).toLocaleString('fr-FR')} €</td>
+                  <td>${statusBadge(c)}</td>
+                  <td>${scoreBadge(c)}</td>
+                  <td style="color:var(--grey-dark);">${c.last_action}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function renderAnalyse(el) {
+      const c = getSelectedCase();
+      if (!c) { el.innerHTML = "<p>Aucun dossier sélectionné.</p>"; return; }
+      const gaugeColor = c.score_color === "green" ? "var(--green-dark)" : (c.score_color === "amber" ? "var(--amber)" : "var(--red)");
+      el.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div>
+            <h2 style="margin:0;font-size:18px;">Analyse — ${c.invoice.invoice_id} (${c.tenant_id})</h2>
+            <p style="margin:2px 0 0;color:var(--grey-dark);">${c.invoice.supplier} → ${c.invoice.customer} • ${Number(c.invoice.amount_ht).toLocaleString('fr-FR')} € HT</p>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:11px;color:var(--grey-dark);text-transform:uppercase;">Score de confiance</div>
+            <div style="font-size:24px;font-weight:700;color:${gaugeColor};">${c.confidence_score}/100</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="panel-title">Synthèse de l'Agent Auditeur</div>
+          <p style="margin:0 0 8px;">${c.auditor_explanation}</p>
+          <div style="padding:10px;background:var(--bg-soft);border-left:3px solid ${gaugeColor};font-weight:600;">Recommandation : ${c.recommendation}</div>
+        </div>
+        <div class="card" style="padding:0;">
+          <table>
+            <thead><tr><th>Règle</th><th>Statut</th><th>Preuve résumée</th><th>Action</th></tr></thead>
+            <tbody>
+              ${c.findings.map(f => `
+                <tr>
+                  <td><strong>${f.label}</strong><div style="font-size:11px;color:var(--grey-dark);">${f.rule_id}</div></td>
+                  <td>${f.passed ? '<span class="badge badge-green">Conforme</span>' : '<span class="badge badge-red">Anomalie</span>'}</td>
+                  <td>${f.summary}</td>
+                  <td><button class="btn btn-sm" onclick="openFirstEvidence('${f.rule_id}')">Voir preuves (${f.evidences.length})</button></td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    async function renderPreuves(el) {
+      const c = getSelectedCase();
+      if (!c) { el.innerHTML = "<p>Aucun dossier sélectionné.</p>"; return; }
+      const allEv = [];
+      c.findings.forEach(f => f.evidences.forEach((ev, idx) => allEv.push({ ...ev, rule_id: f.rule_id, passed: f.passed, id: `${f.rule_id}-${idx}` })));
+      if (!selectedEvidence && allEv.length) selectedEvidence = allEv[0];
+
+      const groups = {
+        input: { title: "Fichier d'entrée", items: allEv.filter(e => e.source_type === "input") },
+        passport: { title: "Passeport client", items: allEv.filter(e => e.source_type === "passport") },
+        regulation: { title: "Réglementation", items: allEv.filter(e => e.source_type === "regulation") },
+      };
+
+      el.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <h2 style="margin:0;font-size:18px;">Preuves &amp; Traçabilité — ${c.invoice.invoice_id}</h2>
+          <button class="btn ${compareMode ? 'btn-primary' : ''}" onclick="toggleCompare()">Mode Comparer (Entrée / Règle)</button>
+        </div>
+        ${compareMode ? `<div id="compare-area" class="evidence-compare"></div>` : `
+        <div class="evidence-split">
+          <div style="overflow-y:auto;max-height:500px;padding-right:4px;">
+            ${Object.values(groups).map(g => `
+              <div class="panel-title" style="margin-top:8px;">${g.title} (${g.items.length})</div>
+              ${g.items.map(ev => `
+                <div class="ev-item ${selectedEvidence && selectedEvidence.id === ev.id ? 'active' : ''}" onclick='pickEvidence(${JSON.stringify(ev).replace(/'/g, "&#39;")})'>
+                  <div style="display:flex;justify-content:space-between;font-weight:700;font-size:11px;">
+                    <span>${ev.rule_id}</span>
+                    <span style="color:var(--grey-dark);">${ev.file.split('/').pop()}</span>
+                  </div>
+                  <div style="font-size:11px;color:var(--grey-dark);margin-top:3px;">${ev.explanation}</div>
+                </div>
+              `).join("")}
+            `).join("")}
+          </div>
+          <div>
+            <div id="ev-header" style="margin-bottom:8px;font-weight:700;font-size:12px;"></div>
+            <div id="file-viewer" class="file-viewer">Sélectionnez une preuve à gauche.</div>
+          </div>
+        </div>`}
+      `;
+
+      if (compareMode) {
+        await renderCompareView(allEv);
+      } else if (selectedEvidence) {
+        await loadEvidenceFile(selectedEvidence, document.getElementById("file-viewer"), document.getElementById("ev-header"));
+      }
+    }
+
+    async function renderCompareView(allEv) {
+      const area = document.getElementById("compare-area");
+      const inp = allEv.find(e => e.source_type === "input" && !e.passed) || allEv.find(e => e.source_type === "input");
+      const reg = allEv.find(e => e.source_type === "regulation" && !e.passed) || allEv.find(e => e.source_type === "regulation");
+      area.innerHTML = `
+        <div>
+          <div class="panel-title" id="cmp-left-hdr">Fichier d'entrée</div>
+          <div class="file-viewer" id="cmp-left"></div>
+        </div>
+        <div>
+          <div class="panel-title" id="cmp-right-hdr">Réglementation</div>
+          <div class="file-viewer" id="cmp-right"></div>
+        </div>
+      `;
+      if (inp) await loadEvidenceFile(inp, document.getElementById("cmp-left"), document.getElementById("cmp-left-hdr"));
+      if (reg) await loadEvidenceFile(reg, document.getElementById("cmp-right"), document.getElementById("cmp-right-hdr"));
+    }
+
+    async function loadEvidenceFile(ev, container, headerEl) {
+      headerEl.textContent = `${ev.file} — ${ev.explanation}`;
+      const res = await fetch(`/api/files?path=${encodeURIComponent(ev.file)}`);
+      if (!res.ok) { container.innerHTML = "<div style='padding:12px;'>Fichier introuvable.</div>"; return; }
+      const data = await res.json();
+
+      if (data.kind === "text") {
+        const s = ev.locator.line_start || 1;
+        const e = ev.locator.line_end || s;
+        container.innerHTML = data.lines.map((ln, idx) => {
+          const num = idx + 1;
+          const hl = num >= s && num <= e;
+          return `<div class="code-line ${hl ? 'line-highlight' : ''}" id="hl-${num}" title="${hl ? ev.explanation : ''}"><span class="line-num">${num}</span><span>${escapeHtml(ln)}</span></div>`;
+        }).join("");
+        const target = container.querySelector(".line-highlight");
+        if (target) target.scrollIntoView({ block: "center" });
+      } else if (data.kind === "csv") {
+        const targetRow = ev.locator.row;
+        const targetCol = ev.locator.column;
+        const colIdx = data.headers.indexOf(targetCol);
+        container.innerHTML = `<table><thead><tr>${data.headers.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>` +
+          data.rows.map((r, rIdx) => {
+            const csvRowNum = rIdx + 2;
+            return `<tr>${r.map((cell, cIdx) => {
+              const hl = csvRowNum === targetRow && (cIdx === colIdx || targetCol === undefined);
+              return `<td class="${hl ? 'cell-highlight' : ''}" title="${hl ? ev.explanation : ''}">${escapeHtml(cell)}</td>`;
+            }).join("")}</tr>`;
+          }).join("") + `</tbody></table>`;
+      } else if (data.kind === "json") {
+        const key = (ev.locator.json_path || "").replace("$.", "");
+        const lines = data.raw.split("\n");
+        container.innerHTML = lines.map((ln, idx) => {
+          const hl = key && ln.includes(`"${key}"`);
+          return `<div class="code-line ${hl ? 'line-highlight' : ''}" title="${hl ? ev.explanation : ''}"><span class="line-num">${idx + 1}</span><span>${escapeHtml(ln)}</span></div>`;
+        }).join("");
+      }
+    }
+
+    function renderExperts(el) {
+      const c = getSelectedCase();
+      if (!c) { el.innerHTML = "<p>Aucun dossier sélectionné.</p>"; return; }
+      const brief = c.micro_briefs.find(b => b.role === expertTabRole);
+      const existing = c.expert_responses[expertTabRole];
+      el.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <h2 style="margin:0;font-size:18px;">Gate 2 — Validation des Experts (${c.invoice.invoice_id})</h2>
+          <div style="display:flex;gap:8px;">
+            <button class="btn ${expertTabRole === 'AVOCAT' ? 'btn-primary' : ''}" onclick="expertTabRole='AVOCAT';renderMain()">Avocat Tax &amp; Legal</button>
+            <button class="btn ${expertTabRole === 'CONSULTANT' ? 'btn-primary' : ''}" onclick="expertTabRole='CONSULTANT';renderMain()">Consultant</button>
+          </div>
+        </div>
+        ${!brief ? `<div class="card">Aucune anomalie sur ce dossier — aucune intervention requise pour ${expertTabRole}.</div>` : `
+          <div class="card">
+            <div class="panel-title">${brief.title}</div>
+            <p>${brief.context_summary}</p>
+            <p style="font-weight:700;margin-top:12px;">${brief.question}</p>
+            <div style="margin:12px 0;">
+              <input id="exp-comment" style="width:100%;" placeholder="Commentaire justificatif de l'expert..." value="${existing ? escapeHtml(existing.comment) : ''}" />
+            </div>
+            <div style="display:flex;gap:8px;">
+              ${brief.options.map(opt => `<button class="btn btn-primary" onclick="submitGate2('${expertTabRole}', '${opt}')">${opt}</button>`).join("")}
+            </div>
+            ${existing ? `<div style="margin-top:12px;color:var(--green-dark);font-weight:700;">Réponse enregistrée : ${existing.decision} (${existing.timestamp})</div>` : ""}
+          </div>
+        `}
+      `;
+    }
+
+    function renderValidation(el) {
+      const c = getSelectedCase();
+      const tenant = document.getElementById("client-select").value;
+      el.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <h2 style="margin:0;font-size:18px;">Gate 3 — Validation Auditeur</h2>
+          <button class="btn btn-primary" onclick="bulkValidate('${tenant === 'ALL' ? 'CLIENT_A' : tenant}')">Valider en masse les dossiers verts</button>
+        </div>
+        ${!c ? "<p>Aucun dossier sélectionné.</p>" : `
+          <div class="card">
+            <div class="panel-title">Décision finale — ${c.invoice.invoice_id}</div>
+            <p>Statut actuel : ${statusBadge(c)} • Score : ${scoreBadge(c)}</p>
+            <p><strong>Recommandation SynthesisAgent :</strong> ${c.recommendation}</p>
+            <div style="display:flex;gap:10px;margin-top:14px;">
+              <button class="btn btn-primary" onclick="submitGate3('Valider')">Valider la conclusion</button>
+              <button class="btn btn-danger" onclick="submitGate3('Rejeter')">Rejeter / Escalader</button>
+            </div>
+          </div>
+        `}
+      `;
+    }
+
+    function renderFiche(el) {
+      const c = getSelectedCase();
+      if (!c) { el.innerHTML = "<p>Aucun dossier sélectionné.</p>"; return; }
+      el.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <h2 style="margin:0;font-size:18px;">Fiche de contrôle documentée — ${c.invoice.invoice_id}</h2>
+          <div style="display:flex;gap:8px;">
+            <a class="btn btn-primary" href="/api/cases/${encodeURIComponent(c.case_id)}/export/docx">Exporter .docx</a>
+            <a class="btn" href="/api/cases/${encodeURIComponent(c.case_id)}/export/md">Exporter .md</a>
+          </div>
+        </div>
+        <div class="card"><pre style="white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:12px;margin:0;">${escapeHtml(c.control_sheet_md)}</pre></div>
+      `;
+    }
+
+    function renderJournal(el) {
+      el.innerHTML = `
+        <h2 style="margin:0 0 14px;font-size:18px;">Journal d'audit structuré (Cloud Logging)</h2>
+        <div class="card" style="padding:0;">
+          <table>
+            <thead><tr><th>Timestamp</th><th>Session</th><th>Tenant</th><th>Acteur</th><th>Action</th><th>Verdict</th></tr></thead>
+            <tbody>
+              ${trustLogs.map(l => `
+                <tr>
+                  <td style="font-family:monospace;font-size:11px;">${l.timestamp}</td>
+                  <td style="font-family:monospace;font-size:11px;">${l.session_id}</td>
+                  <td>${l.tenant_id}</td>
+                  <td><strong>${l.agent}</strong></td>
+                  <td>${l.action}</td>
+                  <td><span class="badge ${l.verdict === 'BLOCK' || l.verdict === 'REJECT' ? 'badge-red' : (l.verdict === 'ANOMALIE' ? 'badge-amber' : 'badge-green')}">${l.verdict}</span></td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
     }
 
     function selectCase(cid) {
       selectedCaseId = cid;
-      renderAll();
+      selectedEvidence = null;
+      renderMain();
     }
 
-    function renderAll() {
-      const list = document.getElementById("cases-list");
-      list.innerHTML = cases.map(c => {
-        const icon = c.status === "QUARANTINE" ? "🛡️" : (c.status === "ANOMALIE" || c.score_color === "RED" ? "⚠️" : "✅");
-        const active = c.case_id === selectedCaseId ? "border-emerald-500 bg-slate-950" : "border-slate-800 bg-slate-950/50";
-        return `<button onclick="selectCase('${c.case_id}')" class="w-full text-left rounded-lg border p-2.5 flex items-center justify-between ${active}">
-          <div><span class="font-bold text-white">${icon} ${c.invoice.invoice_id}</span> <span class="text-slate-400">(${c.invoice.source_file})</span><div class="text-[11px] text-slate-400">${c.invoice.supplier} → ${c.invoice.customer}</div></div>
-          <div class="text-right font-mono"><div class="text-white font-bold">${Number(c.invoice.amount_ht).toLocaleString()} €</div><div class="text-[11px]">${c.status} (${c.confidence_score}/100)</div></div>
-        </button>`;
-      }).join("");
-      renderRolePanel();
+    function openFirstEvidence(ruleId) {
+      const c = getSelectedCase();
+      const f = c.findings.find(x => x.rule_id === ruleId);
+      if (f && f.evidences.length) {
+        selectedEvidence = { ...f.evidences[0], rule_id: f.rule_id, passed: f.passed, id: `${f.rule_id}-0` };
+      }
+      compareMode = false;
+      setTab("preuves");
     }
 
-    function renderRolePanel() {
-      const c = cases.find(x => x.case_id === selectedCaseId);
-      if (!c) return;
-      const sb = document.getElementById("score-badge");
-      sb.textContent = `Score: ${c.confidence_score}/100 (${c.score_color})`;
-      sb.className = c.score_color === "GREEN"
-        ? "px-2.5 py-1 rounded font-mono text-xs font-bold bg-emerald-500/20 text-emerald-300"
-        : c.score_color === "ORANGE"
-        ? "px-2.5 py-1 rounded font-mono text-xs font-bold bg-amber-500/20 text-amber-300"
-        : "px-2.5 py-1 rounded font-mono text-xs font-bold bg-rose-500/20 text-rose-300";
-
-      document.getElementById("fiche-preview").textContent = c.fiche_controle_md;
-
-      const panel = document.getElementById("role-panel");
-      if (c.governance_references?.length) {
-        renderRefs(c.governance_references);
-      }
-      if (c.status === "QUARANTINE") {
-        panel.innerHTML = `<div class="p-3 rounded-lg bg-rose-950/50 border border-rose-700 text-rose-200 font-semibold">${c.recommendation}</div>`;
-        return;
-      }
-
-      if (activeTab === "AUDITEUR") {
-        const rulesHtml = c.rules.map(r => `<div class="p-2 rounded bg-slate-950 border border-slate-800 space-y-0.5"><div>${r.passed ? "✅" : "❌"} <b>${r.rule_id}</b> — ${r.evidence}</div><div class="text-[11px] font-mono text-indigo-300">📚 Réf : ${r.reference}</div></div>`).join("");
-        panel.innerHTML = `
-          <div class="p-2.5 rounded bg-slate-950 border border-slate-800 text-slate-200">${c.auditor_explanation}</div>
-          <div class="space-y-1.5">${rulesHtml}</div>
-          <div class="p-2.5 rounded bg-slate-950 border border-slate-700"><b>Recommandation Synthèse :</b> ${c.recommendation}</div>
-          <div class="flex gap-2 pt-1">
-            <button onclick="sendGate3('VALIDER')" class="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold">Gate 3 : Valider Conclusion</button>
-            <button onclick="sendGate3('REJETER')" class="px-3 py-1.5 rounded bg-rose-700 hover:bg-rose-600 text-white font-semibold">Gate 3 : Rejeter</button>
-          </div>`;
-      } else {
-        const brief = c.micro_briefs.find(b => b.role === activeTab);
-        if (!brief) {
-          panel.innerHTML = `<div class="p-3 rounded bg-emerald-950/40 border border-emerald-700 text-emerald-200">Aucune anomalie — aucun Micro-Brief requis pour ${activeTab}.</div>`;
-          return;
-        }
-        const existing = c.expert_responses[activeTab];
-        const btns = brief.options.map(opt => `<button onclick="sendGate2('${activeTab}', '${opt}')" class="px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">${opt}</button>`).join("");
-        panel.innerHTML = `
-          <div class="p-3 rounded-lg bg-slate-950 border border-slate-800 space-y-1.5">
-            <div class="font-bold text-white">${brief.title}</div>
-            <p class="text-slate-300">${brief.context_summary}</p>
-            <div class="text-amber-300 font-semibold pt-1">${brief.question}</div>
-          </div>
-          <input id="expert-comment" placeholder="Commentaire expert (optionnel)..." class="w-full px-3 py-1.5 rounded bg-slate-950 border border-slate-700 text-white" />
-          <div class="flex flex-wrap gap-2">${btns}</div>
-          ${existing ? `<div class="text-emerald-400 font-mono">✓ Réponse enregistrée : ${existing.decision} (${existing.timestamp})</div>` : ""}`;
-      }
+    function pickEvidence(ev) {
+      selectedEvidence = ev;
+      renderMain();
     }
 
-    async function sendGate2(role, decision) {
-      const comment = document.getElementById("expert-comment")?.value || "";
-      const res = await fetch(`/api/cases/${encodeURIComponent(selectedCaseId)}/gate2`, {
+    function toggleCompare() {
+      compareMode = !compareMode;
+      renderMain();
+    }
+
+    async function examineQuarantine(cid) {
+      const res = await fetch(`/api/quarantine/${encodeURIComponent(cid)}`);
+      const detail = await res.json();
+      selectedCaseId = cid;
+      selectedEvidence = {
+        source_type: "input",
+        file: detail.file,
+        locator: detail.locator,
+        explanation: detail.reason,
+        rule_id: "GATE_1",
+        passed: false,
+        id: "quarantine-0",
+      };
+      compareMode = false;
+      setTab("preuves");
+    }
+
+    async function submitGate2(role, decision) {
+      const comment = document.getElementById("exp-comment")?.value || "";
+      await fetch(`/api/cases/${encodeURIComponent(selectedCaseId)}/gate2`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role, decision, comment, responder_id: `${role.toLowerCase()}@deloitte.fr` })
+        body: JSON.stringify({ role, decision, comment, responder: `${role.toLowerCase()}@deloitte.fr` }),
       });
-      const updated = await res.json();
-      cases = cases.map(x => x.case_id === updated.case_id ? updated : x);
-      renderAll();
+      await refreshData();
     }
 
-    async function sendGate3(decision) {
-      const res = await fetch(`/api/cases/${encodeURIComponent(selectedCaseId)}/gate3`, {
+    async function submitGate3(decision) {
+      await fetch(`/api/cases/${encodeURIComponent(selectedCaseId)}/gate3`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ decision, auditor_id: "auditeur.senior@deloitte.fr" })
+        body: JSON.stringify({ decision, validator: "auditeur.senior@deloitte.fr" }),
       });
-      const updated = await res.json();
-      cases = cases.map(x => x.case_id === updated.case_id ? updated : x);
-      renderAll();
+      await refreshData();
     }
 
-    function exportFiche() {
-      if (!selectedCaseId) return;
-      window.open(`/api/cases/${encodeURIComponent(selectedCaseId)}/fiche`, "_blank");
+    async function bulkValidate(tenantId) {
+      await fetch(`/api/tenants/${tenantId}/bulk-validate`, { method: "POST" });
+      await refreshData();
     }
 
-    function renderRefs(refs) {
-      const box = document.getElementById("refs-box");
-      box.innerHTML = refs.map(r => `<div class="p-1.5 rounded bg-slate-950 border border-slate-800"><span class="font-bold text-indigo-300">[${r.framework}] ${r.citation}</span> — <span class="text-slate-400">${r.summary}</span></div>`).join("");
+    async function uploadFile() {
+      const inp = document.getElementById("upload-file");
+      if (!inp.files.length) return;
+      const tenant = document.getElementById("client-select").value;
+      const targetTenant = tenant === "ALL" ? "CLIENT_B" : tenant;
+      const fd = new FormData();
+      fd.append("file", inp.files[0]);
+      await fetch(`/api/tenants/${targetTenant}/upload`, { method: "POST", body: fd });
+      await refreshData();
     }
 
-    async function loadBaseRefs() {
-      const res = await fetch("/api/governance/references");
-      const data = await res.json();
-      renderRefs([...data.platform, ...Object.values(data.rules)]);
+    async function reseedDemo() {
+      await fetch("/api/seed", { method: "POST" });
+      await refreshData();
     }
 
-    connectSSE();
-    loadBaseRefs();
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    init();
   </script>
 </body>
 </html>

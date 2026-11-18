@@ -1,44 +1,113 @@
-"""FastAPI application for AuditBridge (Deloitte x Google Cloud)."""
+"""FastAPI backend for AuditBridge (Deloitte x Google Cloud)."""
 
 from __future__ import annotations
 
 import asyncio
+import csv
+import io
 import json
+import uuid
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi.responses import HTMLResponse, PlainTextResponse, Response
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
-from app.agents.models import AuditCase, CanonicalInvoice, LedgerEntry, SecurityMeta
-from app.agents.orchestrator import apply_auditor_gate3, apply_expert_response, evaluate_invoice
+from app.agents.exporter import render_control_sheet_docx
+from app.agents.harness import execute_audit_harness, resume_gate2_expert, resume_gate3_auditor
+from app.agents.models import AuditCase, CanonicalInvoice, LedgerEntry
 from app.data.audit_logger import audit_logger
-from app.data.governance_refs import PLATFORM_GOVERNANCE_REFS, RULE_REFERENCES
-from app.data.ingest import QuarantineError, ingest_csv_to_canonical, ingest_file, ingest_pdf_to_canonical
-from app.data.passports import PASSPORTS
-from app.security.iam_impersonator import probe_cross_scope_access
-from scripts.generate_data import generate_demo_files
-
-app = FastAPI(title="AuditBridge — Deloitte x Google Cloud", version="1.0.0")
+from app.data.normalizer import DATA_ROOT, Gate1BlockError, load_passport, normalize_csv_file, normalize_txt_file
 
 _CASES: dict[str, AuditCase] = {}
 _STATIC_INDEX = Path(__file__).parent / "static" / "index.html"
-_SAMPLE_DIR = Path(__file__).resolve().parent.parent / "sample_data_room"
+_QUARANTINE_LOCATORS: dict[str, dict[str, Any]] = {}
 
 
-class Gate2Request(BaseModel):
-    role: str  # AVOCAT | CONSULTANT
+class Gate2Payload(BaseModel):
+    role: str
     decision: str
     comment: str = ""
-    responder_id: str = "expert@deloitte.fr"
+    responder: str = "expert@deloitte.fr"
 
 
-class Gate3Request(BaseModel):
-    decision: str  # VALIDER | REJETER
-    auditor_id: str = "auditeur.senior@deloitte.fr"
+class Gate3Payload(BaseModel):
+    decision: str  # Valider | Rejeter
+    validator: str = "auditeur.senior@deloitte.fr"
     comment: str = ""
+
+
+def _ingest_path(tenant_id: str, path: Path) -> list[AuditCase]:
+    sid = f"sess-{uuid.uuid4().hex[:8]}"
+    rel = str(path.relative_to(DATA_ROOT.parent))
+    try:
+        if path.suffix.lower() == ".csv":
+            items = normalize_csv_file(tenant_id, sid, path)
+        else:
+            items = [normalize_txt_file(tenant_id, sid, path)]
+        created: list[AuditCase] = []
+        for canon, loc in items:
+            case = execute_audit_harness(canon, loc, session_id=sid)
+            _CASES[case.case_id] = case
+            created.append(case)
+        return created
+    except Gate1BlockError as err:
+        q_inv = CanonicalInvoice(
+            tenant_id=tenant_id,
+            invoice_id=f"QUARANTINE-{path.stem}",
+            supplier="[BLOQUE GATE 1]",
+            customer=tenant_id,
+            is_intercompany=False,
+            amount_ht=0.0,
+            vat_rate=0.0,
+            amount_ttc=0.0,
+            invoice_date="2026-12-31",
+            service_date="2026-12-31",
+            ledger_entry=LedgerEntry(account="N/A", amount=0.0, period="2026-12"),
+            description=err.reason,
+            source_file=err.file_rel,
+        )
+        q_case = AuditCase(
+            case_id=f"{tenant_id}:QUARANTINE:{path.name}",
+            session_id=sid,
+            tenant_id=tenant_id,
+            status="Quarantaine",
+            invoice=q_inv,
+            auditor_explanation=err.reason,
+            confidence_score=0,
+            score_color="red",
+            recommendation=f"Document mis en quarantaine à la Gate 1 ({err.action}). Ne jamais transmettre au LLM.",
+            harness_step="QUARANTINED",
+            last_action=f"Quarantaine ({err.action})",
+            quarantine_reason=err.reason,
+            control_sheet_md=f"# QUARANTAINE GATE 1 — {rel}\n\n- **Action :** `{err.action}`\n- **Raison :** {err.reason}\n- **Localisation :** `{err.locator}`\n",
+        )
+        _CASES[q_case.case_id] = q_case
+        _QUARANTINE_LOCATORS[q_case.case_id] = {"file": err.file_rel, "locator": err.locator, "reason": err.reason}
+        return [q_case]
+
+
+def seed_demo_cases() -> None:
+    """Seed the 3 required demo cases: normal (green), 2M€ interco (anomaly), poisoned (quarantined)."""
+    _CASES.clear()
+    _QUARANTINE_LOCATORS.clear()
+    audit_logger.clear()
+
+    _ingest_path("CLIENT_A", DATA_ROOT / "inputs" / "CLIENT_A" / "erp_export.csv")
+    _ingest_path("CLIENT_B", DATA_ROOT / "inputs" / "CLIENT_B" / "facture_0412.txt")
+    _ingest_path("CLIENT_B", DATA_ROOT / "inputs" / "CLIENT_B" / "facture_poison.txt")
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    seed_demo_cases()
+    yield
+
+
+app = FastAPI(title="AuditBridge — Deloitte x Google Cloud", version="2.0.0", lifespan=lifespan)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -51,182 +120,143 @@ async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.get("/api/passports")
-async def list_passports() -> dict[str, Any]:
-    return {k: v.model_dump() for k, v in PASSPORTS.items()}
+@app.post("/api/seed")
+async def reseed_demo() -> dict[str, Any]:
+    seed_demo_cases()
+    return {"seeded": len(_CASES), "cases": [c.model_dump() for c in _CASES.values()]}
 
 
-@app.get("/api/governance/references")
-async def list_governance_references() -> dict[str, Any]:
-    """Return all public EU AI Act, RGPD, and Audit/Accounting references."""
+@app.get("/api/clients")
+async def get_clients() -> dict[str, Any]:
     return {
-        "platform": [r.model_dump() for r in PLATFORM_GOVERNANCE_REFS],
-        "rules": {k: v.model_dump() for k, v in RULE_REFERENCES.items()},
+        "CLIENT_A": load_passport("CLIENT_A"),
+        "CLIENT_B": load_passport("CLIENT_B"),
     }
 
 
-def _ingest_and_evaluate(tenant_id: str, path: Path) -> list[AuditCase]:
-    try:
-        invoices = ingest_file(tenant_id, path)
-        out: list[AuditCase] = []
-        for inv in invoices:
-            case = evaluate_invoice(inv)
-            _CASES[case.case_id] = case
-            out.append(case)
-        return out
-    except QuarantineError as qerr:
-        q_inv = CanonicalInvoice(
-            tenant_id=tenant_id,
-            invoice_id="QUARANTINE",
-            supplier="[BLOQUÉ GATE 1]",
-            customer=tenant_id,
-            is_intercompany=False,
-            amount_ht=0.0,
-            vat_rate=0.0,
-            amount_ttc=0.0,
-            invoice_date="2026-12-31",
-            service_date="2026-12-31",
-            ledger_entry=LedgerEntry(account="N/A", amount=0.0, period="2026-12"),
-            description=qerr.reason,
-            source_file=path.name,
-            security=SecurityMeta(model_armor="blocked", pii_masked=0, tenant_verified=qerr.event_type != "TENANT_ISOLATION_BLOCK"),
-        )
-        q_case = AuditCase(
-            case_id=f"{tenant_id}:QUARANTINE:{path.name}",
-            tenant_id=tenant_id,
-            invoice=q_inv,
-            status="QUARANTINE",
-            auditor_explanation=qerr.reason,
-            confidence_score=0,
-            score_color="RED",
-            recommendation=f"BLOQUÉ À LA GATE 1 ({qerr.event_type}) : Document mis en quarantaine.",
-            governance_references=[r.model_dump() for r in PLATFORM_GOVERNANCE_REFS],
-            fiche_controle_md=(
-                f"# QUARANTAINE SÉCURITÉ — {path.name}\n\n"
-                f"- **Raison :** {qerr.reason}\n"
-                "- **Référence :** Règlement (UE) 2024/1689 (EU AI Act) Art. 9 & Art. 15 • RGPD Art. 32\n"
-            ),
-        )
-        _CASES[q_case.case_id] = q_case
-        return [q_case]
-
-
-@app.post("/api/tenants/{tenant_id}/load-demo")
-async def load_demo(tenant_id: str, case_type: str = "all") -> dict[str, Any]:
-    """Generate and run demo cases (normal | interco | poisoned | all)."""
-    files = {p.name: p for p in generate_demo_files(_SAMPLE_DIR)}
-    # Clear previous cases for this tenant
-    for k in [cid for cid, c in _CASES.items() if c.tenant_id == tenant_id]:
-        del _CASES[k]
-
-    targets: list[Path] = []
-    if tenant_id == "CLIENT_A" or case_type == "normal":
-        targets = [files["CLIENT_A_export_erp.csv"]]
-    elif case_type == "interco":
-        targets = [files["CLIENT_B_facture_0412.pdf"]]
-    elif case_type == "poisoned":
-        targets = [files["CLIENT_B_facture_0412.pdf"], files["CLIENT_B_facture_piegee_0999.pdf"]]
-    else:
-        targets = [files["CLIENT_B_facture_0412.pdf"], files["CLIENT_B_facture_piegee_0999.pdf"]]
-
-    created: list[dict[str, Any]] = []
-    for p in targets:
-        for c in _ingest_and_evaluate(tenant_id, p):
-            created.append(c.model_dump())
-    return {"tenant_id": tenant_id, "cases": created}
+@app.get("/api/cases")
+async def list_cases(tenant_id: str | None = None) -> list[dict[str, Any]]:
+    items = list(_CASES.values())
+    if tenant_id:
+        items = [c for c in items if c.tenant_id == tenant_id]
+    return [c.model_dump() for c in items]
 
 
 @app.post("/api/tenants/{tenant_id}/upload")
-async def upload_invoice(tenant_id: str, file: UploadFile = File(...)) -> dict[str, Any]:
-    data = await file.read()
-    name = file.filename or "facture.pdf"
-    try:
-        invs = (
-            ingest_csv_to_canonical(tenant_id, name, data)
-            if name.lower().endswith(".csv")
-            else ingest_pdf_to_canonical(tenant_id, name, data)
-        )
-        cases = []
-        for inv in invs:
-            c = evaluate_invoice(inv)
-            _CASES[c.case_id] = c
-            cases.append(c.model_dump())
-        return {"tenant_id": tenant_id, "cases": cases}
-    except QuarantineError as qerr:
-        raise HTTPException(status_code=403, detail={"event_type": qerr.event_type, "reason": qerr.reason})
-
-
-@app.post("/api/tenants/{tenant_id}/test-isolation")
-async def test_tenant_isolation(tenant_id: str) -> dict[str, Any]:
-    """Intentionally feed a CLIENT_A file into CLIENT_B to prove Gate 1 isolation."""
-    files = {p.name: p for p in generate_demo_files(_SAMPLE_DIR)}
-    wrong_file = files["CLIENT_A_export_erp.csv"] if tenant_id == "CLIENT_B" else files["CLIENT_B_facture_0412.pdf"]
-    cases = _ingest_and_evaluate(tenant_id, wrong_file)
-    return {"tenant_id": tenant_id, "blocked": True, "cases": [c.model_dump() for c in cases]}
-
-
-@app.get("/api/tenants/{tenant_id}/cases")
-async def list_cases(tenant_id: str) -> list[dict[str, Any]]:
-    return [c.model_dump() for c in _CASES.values() if c.tenant_id == tenant_id]
+async def upload_input(tenant_id: str, file: UploadFile = File(...)) -> dict[str, Any]:
+    name = Path(file.filename or "uploaded.txt").name
+    dest_dir = DATA_ROOT / "inputs" / tenant_id
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest = dest_dir / name
+    dest.write_bytes(await file.read())
+    created = _ingest_path(tenant_id, dest)
+    return {"cases": [c.model_dump() for c in created]}
 
 
 @app.post("/api/cases/{case_id:path}/gate2")
-async def submit_gate2(case_id: str, req: Gate2Request) -> dict[str, Any]:
+async def gate2_submit(case_id: str, payload: Gate2Payload) -> dict[str, Any]:
     case = _CASES.get(case_id)
-    if case is None:
+    if not case:
         raise HTTPException(status_code=404, detail="Case not found")
-    updated = apply_expert_response(case, req.role, req.decision, req.comment, req.responder_id)
+    updated = resume_gate2_expert(case, payload.role, payload.decision, payload.comment, payload.responder)
     _CASES[case_id] = updated
     return updated.model_dump()
 
 
 @app.post("/api/cases/{case_id:path}/gate3")
-async def submit_gate3(case_id: str, req: Gate3Request) -> dict[str, Any]:
+async def gate3_submit(case_id: str, payload: Gate3Payload) -> dict[str, Any]:
     case = _CASES.get(case_id)
-    if case is None:
+    if not case:
         raise HTTPException(status_code=404, detail="Case not found")
-    updated = apply_auditor_gate3(case, req.decision, req.auditor_id, req.comment)
+    updated = resume_gate3_auditor(case, payload.decision, payload.validator, payload.comment)
     _CASES[case_id] = updated
     return updated.model_dump()
 
 
-@app.get("/api/cases/{case_id:path}/fiche", response_class=PlainTextResponse)
-async def export_fiche(case_id: str) -> PlainTextResponse:
+@app.post("/api/tenants/{tenant_id}/bulk-validate")
+async def bulk_validate_green(tenant_id: str, validator: str = "auditeur.senior@deloitte.fr") -> dict[str, Any]:
+    count = 0
+    for cid, case in list(_CASES.items()):
+        if case.tenant_id == tenant_id and case.status == "Conforme" and case.score_color == "green":
+            _CASES[cid] = resume_gate3_auditor(case, "Valider", validator, "Validation en masse (score vert)")
+            count += 1
+    return {"validated_count": count}
+
+
+@app.get("/api/cases/{case_id:path}/export/md", response_class=PlainTextResponse)
+async def export_md(case_id: str) -> PlainTextResponse:
     case = _CASES.get(case_id)
-    if case is None:
+    if not case:
         raise HTTPException(status_code=404, detail="Case not found")
-    return PlainTextResponse(case.fiche_controle_md, media_type="text/markdown")
-
-
-@app.post("/api/security/iam-probe")
-async def run_iam_probe(tenant_id: str = "CLIENT_B") -> dict[str, Any]:
-    res = probe_cross_scope_access()
-    audit_logger.log(
-        deal_id=tenant_id,
-        agent_name="sa-legal",
-        event_type="IAM_403_BLOCK" if not res.allowed else "IAM_VIOLATION",
-        severity="CRITICAL" if not res.allowed else "ERROR",
-        details={"actor_sa": res.actor_sa, "target": res.target_resource, "status_code": res.status_code, "message": res.message},
+    return PlainTextResponse(
+        case.control_sheet_md,
+        media_type="text/markdown",
+        headers={"Content-Disposition": f'attachment; filename="fiche_{case.invoice.invoice_id}.md"'},
     )
-    return res.__dict__
 
 
-@app.get("/api/tenants/{tenant_id}/events")
-async def stream_events(tenant_id: str) -> EventSourceResponse:
+@app.get("/api/cases/{case_id:path}/export/docx")
+async def export_docx(case_id: str) -> Response:
+    case = _CASES.get(case_id)
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    data = render_control_sheet_docx(case)
+    return Response(
+        content=data,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f'attachment; filename="fiche_{case.invoice.invoice_id}.docx"'},
+    )
+
+
+@app.get("/api/files")
+async def read_source_file(path: str = Query(..., description="Relative path inside data/")) -> dict[str, Any]:
+    """Serve source files (txt, md, csv, json) safely for the Evidence Viewer."""
+    repo_root = DATA_ROOT.parent.resolve()
+    target = (repo_root / path).resolve()
+    if not str(target).startswith(str(DATA_ROOT.resolve())) or not target.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    raw = target.read_text(encoding="utf-8")
+    ext = target.suffix.lower()
+    if ext == ".csv":
+        rows = list(csv.reader(io.StringIO(raw)))
+        return {"path": path, "kind": "csv", "headers": rows[0] if rows else [], "rows": rows[1:] if len(rows) > 1 else []}
+    if ext == ".json":
+        return {"path": path, "kind": "json", "raw": json.dumps(json.loads(raw), indent=2, ensure_ascii=False)}
+    return {"path": path, "kind": "text", "lines": raw.splitlines()}
+
+
+@app.get("/api/quarantine/{case_id:path}")
+async def get_quarantine_detail(case_id: str) -> dict[str, Any]:
+    detail = _QUARANTINE_LOCATORS.get(case_id)
+    if not detail:
+        raise HTTPException(status_code=404, detail="Quarantine detail not found")
+    return detail
+
+
+@app.get("/api/trust")
+async def get_trust_state() -> dict[str, Any]:
+    return {
+        "metrics": audit_logger.metrics,
+        "logs": [l.model_dump() for l in audit_logger.list_logs()[-50:]],
+    }
+
+
+@app.get("/api/logs/stream")
+async def stream_logs() -> EventSourceResponse:
     q = audit_logger.subscribe()
 
-    async def event_gen():
+    async def gen():
         try:
-            for existing in audit_logger.list_events(tenant_id)[-25:]:
-                yield {"event": "audit", "data": json.dumps(existing.model_dump())}
+            for evt in audit_logger.list_logs()[-30:]:
+                yield {"event": "log", "data": json.dumps(evt.model_dump())}
             while True:
                 try:
                     evt = await asyncio.wait_for(q.get(), timeout=15.0)
-                    if evt.deal_id == tenant_id:
-                        yield {"event": "audit", "data": json.dumps(evt.model_dump())}
+                    yield {"event": "log", "data": json.dumps(evt.model_dump())}
                 except asyncio.TimeoutError:
                     yield {"event": "ping", "data": "{}"}
         finally:
             audit_logger.unsubscribe(q)
 
-    return EventSourceResponse(event_gen())
+    return EventSourceResponse(gen())

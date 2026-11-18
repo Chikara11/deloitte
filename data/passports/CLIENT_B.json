@@ -1,0 +1,20 @@
+{
+  "tenant_id": "CLIENT_B",
+  "client_name": "Nova Group Europe (Fictional)",
+  "input_format": "txt_pdf",
+  "column_mapping": {
+    "FACTURE_ID": "invoice_id",
+    "EMETTEUR": "supplier",
+    "DESTINATAIRE": "customer",
+    "INTERCOMPAGNIE": "is_intercompany",
+    "MONTANT_HT": "amount_ht",
+    "TAUX_TVA": "vat_rate",
+    "DATE_FACTURE": "invoice_date",
+    "DATE_PRESTATION": "service_date",
+    "OBJET": "description"
+  },
+  "vat_rate": 0.20,
+  "closing_date": "2026-12-31",
+  "approval_threshold": 100000,
+  "group_entities": ["Nova Lux SARL", "Nova France SAS"]
+}

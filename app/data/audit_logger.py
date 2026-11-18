@@ -1,10 +1,10 @@
-"""Immutable governance audit logger with BigQuery sink + live SSE event stream."""
+"""Structured JSON Cloud Logging + BigQuery Audit Sink + SSE Live Stream + Trust Metrics."""
 
 from __future__ import annotations
 
 import asyncio
 import json
-import uuid
+import sys
 from datetime import datetime, timezone
 from typing import Any
 
@@ -13,25 +13,28 @@ from pydantic import BaseModel
 from app.config import settings
 
 
-class AuditEvent(BaseModel):
-    """Single governance or agent telemetry event."""
-
-    event_id: str
+class StructuredLogEvent(BaseModel):
+    session_id: str
+    tenant_id: str
+    agent: str
+    action: str
+    verdict: str  # PASS | BLOCK | ANOMALIE | REJECT | INFO
     timestamp: str
-    deal_id: str
-    agent_name: str
-    event_type: str
-    severity: str
-    details: dict[str, Any]
+    details: dict[str, Any] = {}
 
 
 class AuditLogger:
-    """Broadcasts governance events to SSE subscribers and optionally BigQuery."""
-
     def __init__(self) -> None:
-        self._events: list[AuditEvent] = []
-        self._subscribers: list[asyncio.Queue[AuditEvent]] = []
+        self._logs: list[StructuredLogEvent] = []
+        self._subscribers: list[asyncio.Queue[StructuredLogEvent]] = []
         self._bq_client: Any = None
+        self.metrics: dict[str, Any] = {
+            "tenant_verified": True,
+            "pii_masked_count": 0,
+            "model_armor_blocks": 0,
+            "skeptic_rejections": 0,
+            "current_harness_step": "IDLE",
+        }
 
     def _get_bq(self) -> Any:
         if not settings.use_real_gcp_data:
@@ -45,25 +48,41 @@ class AuditLogger:
                 self._bq_client = False
         return self._bq_client if self._bq_client is not False else None
 
+    def set_step(self, step: str) -> None:
+        self.metrics["current_harness_step"] = step
+
     def log(
         self,
-        deal_id: str,
-        agent_name: str,
-        event_type: str,
-        severity: str = "INFO",
+        session_id: str,
+        tenant_id: str,
+        agent: str,
+        action: str,
+        verdict: str,
         details: dict[str, Any] | None = None,
-    ) -> AuditEvent:
-        """Record an audit event, notify SSE listeners, and sink to BigQuery if enabled."""
-        evt = AuditEvent(
-            event_id=str(uuid.uuid4())[:12],
+    ) -> StructuredLogEvent:
+        evt = StructuredLogEvent(
+            session_id=session_id,
+            tenant_id=tenant_id,
+            agent=agent,
+            action=action,
+            verdict=verdict,
             timestamp=datetime.now(timezone.utc).isoformat(),
-            deal_id=deal_id,
-            agent_name=agent_name,
-            event_type=event_type,
-            severity=severity,
             details=details or {},
         )
-        self._events.append(evt)
+        self._logs.append(evt)
+
+        if action == "DLP_MASKED":
+            self.metrics["pii_masked_count"] += int((details or {}).get("count", 0))
+        elif action == "MODEL_ARMOR_BLOCK":
+            self.metrics["model_armor_blocks"] += 1
+        elif action == "SKEPTIC_REJECT":
+            self.metrics["skeptic_rejections"] += 1
+        elif action == "TENANT_ISOLATION_BLOCK":
+            self.metrics["tenant_verified"] = False
+
+        # Emit structured JSON to stdout for Cloud Logging
+        print(json.dumps({"severity": "WARNING" if verdict in ("BLOCK", "REJECT") else "INFO", **evt.model_dump()}), file=sys.stdout, flush=True)
+
         for q in list(self._subscribers):
             q.put_nowait(evt)
 
@@ -71,34 +90,45 @@ class AuditLogger:
         if bq is not None:
             try:
                 table_id = f"{settings.gcp_project_id}.{settings.bq_dataset}.{settings.bq_audit_table}"
-                row = {
-                    "event_id": evt.event_id,
-                    "timestamp": evt.timestamp,
-                    "deal_id": evt.deal_id,
-                    "agent_name": evt.agent_name,
-                    "event_type": evt.event_type,
-                    "severity": evt.severity,
-                    "details_json": json.dumps(evt.details),
-                }
-                bq.insert_rows_json(table_id, [row])
+                bq.insert_rows_json(
+                    table_id,
+                    [
+                        {
+                            "event_id": f"{session_id}-{len(self._logs)}",
+                            "timestamp": evt.timestamp,
+                            "deal_id": evt.tenant_id,
+                            "agent_name": evt.agent,
+                            "event_type": evt.action,
+                            "severity": evt.verdict,
+                            "details_json": json.dumps(evt.details),
+                        }
+                    ],
+                )
             except Exception:
                 pass
         return evt
 
-    def list_events(self, deal_id: str | None = None) -> list[AuditEvent]:
-        """Return recorded events, optionally filtered by deal_id."""
-        if deal_id is None:
-            return list(self._events)
-        return [e for e in self._events if e.deal_id == deal_id]
+    def list_logs(self, tenant_id: str | None = None) -> list[StructuredLogEvent]:
+        if tenant_id is None:
+            return list(self._logs)
+        return [e for e in self._logs if e.tenant_id == tenant_id]
 
-    def subscribe(self) -> asyncio.Queue[AuditEvent]:
-        """Register a new SSE subscriber queue."""
-        q: asyncio.Queue[AuditEvent] = asyncio.Queue()
+    def clear(self) -> None:
+        self._logs.clear()
+        self.metrics = {
+            "tenant_verified": True,
+            "pii_masked_count": 0,
+            "model_armor_blocks": 0,
+            "skeptic_rejections": 0,
+            "current_harness_step": "IDLE",
+        }
+
+    def subscribe(self) -> asyncio.Queue[StructuredLogEvent]:
+        q: asyncio.Queue[StructuredLogEvent] = asyncio.Queue()
         self._subscribers.append(q)
         return q
 
-    def unsubscribe(self, q: asyncio.Queue[AuditEvent]) -> None:
-        """Remove an SSE subscriber queue."""
+    def unsubscribe(self, q: asyncio.Queue[StructuredLogEvent]) -> None:
         if q in self._subscribers:
             self._subscribers.remove(q)
 

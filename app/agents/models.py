@@ -1,27 +1,29 @@
-"""Canonical JSON and AuditBridge workflow Pydantic models."""
+"""Pydantic schemas for AuditBridge: Evidence Traceability, Canonical JSON, Harness & Case."""
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
+
+
+class Evidence(BaseModel):
+    """Mandatory evidence traceability object."""
+
+    source_type: Literal["input", "passport", "regulation"]
+    file: str  # relative path from repo root, e.g. data/inputs/CLIENT_B/facture_0412.txt
+    locator: dict[str, Any]  # {line_start, line_end} | {row, column} | {json_path}
+    excerpt: str
+    explanation: str
 
 
 class LedgerEntry(BaseModel):
     account: str
     amount: float
-    period: str  # YYYY-MM
-
-
-class SecurityMeta(BaseModel):
-    model_armor: str  # clean | blocked
-    pii_masked: int = 0
-    tenant_verified: bool = True
+    period: str
 
 
 class CanonicalInvoice(BaseModel):
-    """Strict Canonical JSON contract between Group 1 (Ingestion) and Group 2 (Agents)."""
-
     tenant_id: str
     invoice_id: str
     supplier: str
@@ -30,24 +32,24 @@ class CanonicalInvoice(BaseModel):
     amount_ht: float
     vat_rate: float
     amount_ttc: float
-    invoice_date: str  # YYYY-MM-DD
-    service_date: str  # YYYY-MM-DD
+    invoice_date: str
+    service_date: str
     ledger_entry: LedgerEntry
     description: str
     source_file: str
-    security: SecurityMeta
 
 
-class RuleCheckResult(BaseModel):
+class Finding(BaseModel):
     rule_id: str  # CUT_OFF | CONCORDANCE | TVA | INTERCOMPAGNIE | SEUIL
     label: str
     passed: bool
-    evidence: str
-    reference: str = ""
+    summary: str
+    evidences: list[Evidence] = Field(default_factory=list)
+    skeptic_verified: bool = False
 
 
 class MicroBrief(BaseModel):
-    role: str  # AVOCAT | CONSULTANT
+    role: Literal["AVOCAT", "CONSULTANT"]
     title: str
     question: str
     options: list[str]
@@ -55,25 +57,28 @@ class MicroBrief(BaseModel):
 
 
 class ExpertResponse(BaseModel):
-    role: str  # AVOCAT | CONSULTANT
-    decision: str  # Conforme | Non conforme | Livré | Non livré | Livré en 2027
+    role: Literal["AVOCAT", "CONSULTANT"]
+    decision: str
     comment: str = ""
-    responder_id: str = ""
+    responder: str = ""
     timestamp: str = ""
 
 
 class AuditCase(BaseModel):
     case_id: str
+    session_id: str
     tenant_id: str
+    status: Literal["Conforme", "Anomalie", "Quarantaine", "Validé", "Rejeté"]
     invoice: CanonicalInvoice
-    status: str  # OK | ANOMALIE | QUARANTINE | VALIDATED | REJECTED
-    rules: list[RuleCheckResult] = Field(default_factory=list)
+    findings: list[Finding] = Field(default_factory=list)
     auditor_explanation: str = ""
     micro_briefs: list[MicroBrief] = Field(default_factory=list)
     expert_responses: dict[str, ExpertResponse] = Field(default_factory=dict)
     confidence_score: int = 100
-    score_color: str = "GREEN"  # GREEN | ORANGE | RED
+    score_color: Literal["green", "amber", "red"] = "green"
     recommendation: str = ""
-    auditor_gate3: dict[str, Any] | None = None
-    governance_references: list[dict[str, str]] = Field(default_factory=list)
-    fiche_controle_md: str = ""
+    validator_decision: dict[str, Any] | None = None
+    harness_step: str = "IDLE"
+    last_action: str = ""
+    quarantine_reason: str = ""
+    control_sheet_md: str = ""
